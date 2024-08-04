@@ -1,4 +1,4 @@
-import 'package:notelens_app/src/common/config/database_config.dart';
+import 'package:notelens_app/common/config/database_config.dart';
 import 'package:notelens_app/src/model/category.dart';
 import 'package:notelens_app/src/model/qna.dart';
 
