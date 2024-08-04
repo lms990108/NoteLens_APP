@@ -6,6 +6,9 @@ class QnAFields {
   static const String qContent = 'qContent';
   static const String aContent = 'aContent';
   static const String memo = 'memo';
+  static const String createdAt = 'createdAt';
+  static const String deletedAt = 'deletedAt';
+  static const String isDeleted = 'isDeleted';
 }
 
 class QnA {
@@ -15,6 +18,9 @@ class QnA {
   final String qContent;
   final String aContent;
   final String? memo;
+  final DateTime createdAt;
+  final DateTime? deletedAt;
+  final bool isDeleted;
 
   const QnA({
     this.id,
@@ -22,6 +28,9 @@ class QnA {
     required this.qContent,
     required this.aContent,
     this.memo,
+    required this.createdAt,
+    this.deletedAt,
+    required this.isDeleted,
   });
 
   QnA copyWith({
@@ -30,6 +39,9 @@ class QnA {
     String? qContent,
     String? aContent,
     String? memo,
+    DateTime? createdAt,
+    DateTime? deletedAt,
+    bool? isDeleted,
   }) {
     return QnA(
       id: id ?? this.id,
@@ -37,6 +49,9 @@ class QnA {
       qContent: qContent ?? this.qContent,
       aContent: aContent ?? this.aContent,
       memo: memo ?? this.memo,
+      createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -47,6 +62,9 @@ class QnA {
       QnAFields.qContent: qContent,
       QnAFields.aContent: aContent,
       QnAFields.memo: memo,
+      QnAFields.createdAt: createdAt.toIso8601String(),
+      QnAFields.deletedAt: deletedAt?.toIso8601String(),
+      QnAFields.isDeleted: isDeleted ? 1 : 0,
     };
   }
 
@@ -57,6 +75,11 @@ class QnA {
       qContent: map[QnAFields.qContent] as String,
       aContent: map[QnAFields.aContent] as String,
       memo: map[QnAFields.memo] != null ? map[QnAFields.memo] as String : null,
+      createdAt: DateTime.parse(map[QnAFields.createdAt] as String),
+      deletedAt: map[QnAFields.deletedAt] != null
+          ? DateTime.parse(map[QnAFields.deletedAt] as String)
+          : null,
+      isDeleted: map[QnAFields.isDeleted] == 1,
     );
   }
 
@@ -67,7 +90,7 @@ class QnA {
 
   @override
   String toString() {
-    return 'QnA(id: $id, title: $title, qContent: $qContent, aContent: $aContent, memo: $memo)';
+    return 'QnA(id: $id, title: $title, qContent: $qContent, aContent: $aContent, memo: $memo, createdAt: $createdAt, deletedAt: $deletedAt, isDeleted: $isDeleted)';
   }
 
   @override
@@ -78,7 +101,10 @@ class QnA {
         other.title == title &&
         other.qContent == qContent &&
         other.aContent == aContent &&
-        other.memo == memo;
+        other.memo == memo &&
+        other.createdAt == createdAt &&
+        other.deletedAt == deletedAt &&
+        other.isDeleted == isDeleted;
   }
 
   @override
@@ -87,6 +113,9 @@ class QnA {
         title.hashCode ^
         qContent.hashCode ^
         aContent.hashCode ^
-        memo.hashCode;
+        memo.hashCode ^
+        createdAt.hashCode ^
+        deletedAt.hashCode ^
+        isDeleted.hashCode;
   }
 }
