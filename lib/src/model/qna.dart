@@ -9,6 +9,7 @@ class QnAFields {
   static const String createdAt = 'createdAt';
   static const String deletedAt = 'deletedAt';
   static const String isDeleted = 'isDeleted';
+  static const String categoryId = 'categoryId';
 }
 
 class QnA {
@@ -21,6 +22,7 @@ class QnA {
   final DateTime createdAt;
   final DateTime? deletedAt;
   final bool isDeleted;
+  final int categoryId;
 
   const QnA({
     this.id,
@@ -31,6 +33,7 @@ class QnA {
     required this.createdAt,
     this.deletedAt,
     required this.isDeleted,
+    required this.categoryId,
   });
 
   QnA copyWith({
@@ -42,6 +45,7 @@ class QnA {
     DateTime? createdAt,
     DateTime? deletedAt,
     bool? isDeleted,
+    int? categoryId,
   }) {
     return QnA(
       id: id ?? this.id,
@@ -52,6 +56,7 @@ class QnA {
       createdAt: createdAt ?? this.createdAt,
       deletedAt: deletedAt ?? this.deletedAt,
       isDeleted: isDeleted ?? this.isDeleted,
+      categoryId: categoryId ?? this.categoryId,
     );
   }
 
@@ -65,6 +70,7 @@ class QnA {
       QnAFields.createdAt: createdAt.toIso8601String(),
       QnAFields.deletedAt: deletedAt?.toIso8601String(),
       QnAFields.isDeleted: isDeleted ? 1 : 0,
+      QnAFields.categoryId: categoryId,
     };
   }
 
@@ -80,6 +86,7 @@ class QnA {
           ? DateTime.parse(map[QnAFields.deletedAt] as String)
           : null,
       isDeleted: map[QnAFields.isDeleted] == 1,
+      categoryId: map[QnAFields.categoryId] as int,
     );
   }
 
@@ -90,7 +97,7 @@ class QnA {
 
   @override
   String toString() {
-    return 'QnA(id: $id, title: $title, qContent: $qContent, aContent: $aContent, memo: $memo, createdAt: $createdAt, deletedAt: $deletedAt, isDeleted: $isDeleted)';
+    return 'QnA(id: $id, title: $title, qContent: $qContent, aContent: $aContent, memo: $memo, createdAt: $createdAt, deletedAt: $deletedAt, isDeleted: $isDeleted, categoryId: $categoryId)';
   }
 
   @override
@@ -104,7 +111,8 @@ class QnA {
         other.memo == memo &&
         other.createdAt == createdAt &&
         other.deletedAt == deletedAt &&
-        other.isDeleted == isDeleted;
+        other.isDeleted == isDeleted &&
+        other.categoryId == categoryId;
   }
 
   @override
@@ -116,6 +124,7 @@ class QnA {
         memo.hashCode ^
         createdAt.hashCode ^
         deletedAt.hashCode ^
-        isDeleted.hashCode;
+        isDeleted.hashCode ^
+        categoryId.hashCode;
   }
 }
