@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:notelens_app/src/common/utils/database_utils.dart';
+import 'package:notelens_app/common/utils/database_utils.dart';
 
 void main() async {
   await DatabaseUtils.initializeDatabase();
