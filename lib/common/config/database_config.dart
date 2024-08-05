@@ -24,7 +24,7 @@ class DatabaseConfig {
 
   Future<void> _initDataBase() async {
     var databasePath = await getDatabasesPath();
-    String path = join(databasePath, 'sample.db');
+    String path = join(databasePath, 'notelens.db');
     _database = await openDatabase(path, version: 1, onCreate: _databaseCreate);
   }
 

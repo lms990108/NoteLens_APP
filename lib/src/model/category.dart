@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:notelens_app/src/model/qna.dart';
-
 class CategoryFields {
   static const String id = 'id';
   static const String title = 'title';
@@ -19,7 +17,6 @@ class Category {
   final DateTime createdAt;
   final DateTime? deletedAt;
   final bool isDeleted;
-  final List<QnA> qnas;
 
   const Category({
     this.id,
@@ -28,7 +25,6 @@ class Category {
     required this.createdAt,
     this.deletedAt,
     required this.isDeleted,
-    this.qnas = const [],
   });
 
   Category copyWith({
@@ -38,7 +34,6 @@ class Category {
     DateTime? createdAt,
     DateTime? deletedAt,
     bool? isDeleted,
-    List<QnA>? qnas,
   }) {
     return Category(
       id: id ?? this.id,
@@ -47,7 +42,6 @@ class Category {
       createdAt: createdAt ?? this.createdAt,
       deletedAt: deletedAt ?? this.deletedAt,
       isDeleted: isDeleted ?? this.isDeleted,
-      qnas: qnas ?? this.qnas,
     );
   }
 
@@ -59,7 +53,6 @@ class Category {
       CategoryFields.createdAt: createdAt.toIso8601String(),
       CategoryFields.deletedAt: deletedAt?.toIso8601String(),
       CategoryFields.isDeleted: isDeleted ? 1 : 0,
-      'qnas': qnas.map((qna) => qna.toMap()).toList(),
     };
   }
 
@@ -75,10 +68,6 @@ class Category {
           ? DateTime.parse(map[CategoryFields.deletedAt] as String)
           : null,
       isDeleted: map[CategoryFields.isDeleted] == 1,
-      qnas: map['qnas'] != null
-          ? List<QnA>.from((map['qnas'] as List<dynamic>)
-              .map((e) => QnA.fromMap(e as Map<String, dynamic>)))
-          : [],
     );
   }
 
@@ -89,7 +78,7 @@ class Category {
 
   @override
   String toString() {
-    return 'Category(id: $id, title: $title, description: $description, createdAt: $createdAt, deletedAt: $deletedAt, isDeleted: $isDeleted, qnas: $qnas)';
+    return 'Category(id: $id, title: $title, description: $description, createdAt: $createdAt, deletedAt: $deletedAt, isDeleted: $isDeleted)';
   }
 
   @override
@@ -101,8 +90,7 @@ class Category {
         other.description == description &&
         other.createdAt == createdAt &&
         other.deletedAt == deletedAt &&
-        other.isDeleted == isDeleted &&
-        other.qnas == qnas;
+        other.isDeleted == isDeleted;
   }
 
   @override
@@ -112,7 +100,6 @@ class Category {
         description.hashCode ^
         createdAt.hashCode ^
         deletedAt.hashCode ^
-        isDeleted.hashCode ^
-        qnas.hashCode;
+        isDeleted.hashCode;
   }
 }
