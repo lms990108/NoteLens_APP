@@ -1,7 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:notelens_app/src/model/category.dart';
-import 'package:notelens_app/src/model/qna.dart';
+import 'package:notelens_app/src/data/model/category.dart';
+import 'package:notelens_app/src/data/model/qna.dart';
 
 class DatabaseConfig {
   static final DatabaseConfig instance = DatabaseConfig._instance();
