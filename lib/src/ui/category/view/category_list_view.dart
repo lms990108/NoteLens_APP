@@ -35,37 +35,42 @@ class CategoryListView extends StatelessWidget {
   }
 
   Widget _myMainPage() {
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(12, 20, 0, 3),
-          alignment: Alignment.bottomLeft,
-          child: const Text('Category')
-        ),
-        Container(
-          height: 1,
-          width: double.infinity,
-          color: Colors.black,
-          margin: const EdgeInsets.fromLTRB(10, 0, 10, 0)
-        )
-      ],
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(12, 20, 0, 3),
+            alignment: Alignment.bottomLeft,
+            child: const Text('Category')
+          ),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.black,
+            margin: const EdgeInsets.fromLTRB(10, 0, 10, 0)
+          )
+        ],
+      ),
     );
   }
 
   Widget _myBottomBar() {
-    return SizedBox(
-      height: 60,
+    return BottomAppBar(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
             onPressed: () {_categoryListViewModel.incrementCounter();},
             iconSize: 40
           ),
+          const Spacer(),
           IconButton(
+            icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
             onPressed: () {_categoryListViewModel.incrementCounter();},
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 203, 203, 203))
+            iconSize: 40,
           )
         ],
       ),
