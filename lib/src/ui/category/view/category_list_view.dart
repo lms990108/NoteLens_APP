@@ -39,43 +39,53 @@ class CategoryListView extends StatelessWidget {
 
   Widget _buildCategoryList(
       BuildContext context, CategoryListViewModel viewModel) {
+    // isDeleted가 false인 카테고리만 필터링
+    final activeCategories = viewModel.categories
+        .where((category) => category.isDeleted == false)
+        .toList();
+
     return FutureBuilder(
       future: viewModel.fetchCategories(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Failed to load categories'));
-        } else {
-          return ListView.builder(
-            itemCount: viewModel.categories.length,
-            itemBuilder: (context, index) {
-              final category = viewModel.categories[index];
-              return ListTile(
-                title: Text(category.title),
-                subtitle: Text(category.description ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () {
-                        // 업데이트 로직 추가
-                        // viewModel.updateCategory(category);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        viewModel.deleteCategory(category.id!);
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        }
+        return ListView.builder(
+          itemCount: activeCategories.length,
+          itemBuilder: (context, index) {
+            final category = activeCategories[index];
+            return ListTile(
+              title: Text(category.title),
+              subtitle: Text(category.description ?? ''),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () {
+                      // Update with the specific category's ID
+                      viewModel.updateCategory(
+                        // TODO : update 페이지로 이동
+                        Category(
+                          id: category
+                              .id, // Use the existing ID of the category
+                          title: 'Updated Category',
+                          description: 'Updated Description',
+                          createdAt: category.createdAt,
+                          isDeleted: category.isDeleted,
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      // Delete using the specific category's ID
+                      viewModel.deleteCategory(category.id!);
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -94,7 +104,7 @@ class CategoryListView extends StatelessWidget {
           ),
           IconButton(
             onPressed: () {
-              // 새로운 카테고리 추가 로직
+              // Logic to add a new category
               viewModel.addCategory(
                 Category(
                   title: 'New Category',
