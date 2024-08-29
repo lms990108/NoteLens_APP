@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
 import 'package:notelens_app/src/data/model/category.dart';
+import 'create_category_view.dart';
 
 class CategoryListView extends StatelessWidget {
   const CategoryListView({super.key});
 
-  
   @override
   Widget build(BuildContext context) {
     final categoryListViewModel = Provider.of<CategoryListViewModel>(context);
@@ -14,7 +15,7 @@ class CategoryListView extends StatelessWidget {
     return Scaffold(
       appBar: _myAppBar(categoryListViewModel),
       body: _buildCategoryList(context, categoryListViewModel),
-      bottomNavigationBar: _myBottomBar(categoryListViewModel),
+      bottomNavigationBar: _myBottomBar(context, categoryListViewModel),
     );
   }
 
@@ -33,14 +34,14 @@ class CategoryListView extends StatelessWidget {
           child: const Icon(Icons.plus_one_outlined),
           onTap: () {
             // Logic to add a new category
-              viewModel.addCategory(
-                Category(
-                  title: 'New Category',
-                  description: 'New Description',
-                  createdAt: DateTime.now(),
-                  isDeleted: false,
-                ),
-              );
+            viewModel.addCategory(
+              Category(
+                title: 'New Category',
+                description: 'New Description',
+                createdAt: DateTime.now(),
+                isDeleted: false,
+              ),
+            );
           },
         ),
         IconButton(
@@ -105,21 +106,28 @@ class CategoryListView extends StatelessWidget {
     );
   }
 
-  Widget _myBottomBar(CategoryListViewModel viewModel) {
+  Widget _myBottomBar(BuildContext context, CategoryListViewModel viewModel) {
     return BottomAppBar(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
-            onPressed: () {},
-            iconSize: 40
-          ),
+              icon: const Icon(Icons.help_outline_rounded,
+                  color: Color.fromARGB(255, 203, 203, 203)),
+              onPressed: () {},
+              iconSize: 40),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
-            onPressed: () {},
+            icon: const Icon(Icons.add_circle_outline_rounded,
+                color: Color.fromARGB(255, 203, 203, 203)),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CreateCategoryView(),
+                ),
+              );
+            },
             iconSize: 40,
           )
         ],
