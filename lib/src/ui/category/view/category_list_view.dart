@@ -252,6 +252,19 @@ class _CategoryListViewState extends State<CategoryListView> {
           const Spacer(),
           GestureDetector(
             onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CreateCategoryView(),
+                ),
+              );
+            },
+            child: Icon(
+              Icons.add,
+              size: 40,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
               setState(() {
                 _isRightBlurred = !_isRightBlurred; // 오른쪽 블러 상태를 토글
                 if (_isLeftBlurred) _isLeftBlurred = false; // 왼쪽 블러 상태를 끔
