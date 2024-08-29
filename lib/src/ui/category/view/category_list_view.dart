@@ -4,8 +4,9 @@ import 'package:notelens_app/src/ui/category/view_model/category_list_view_model
 import 'package:notelens_app/src/data/model/category.dart';
 
 class CategoryListView extends StatelessWidget {
-  CategoryListView({super.key});
+  const CategoryListView({super.key});
 
+  
   @override
   Widget build(BuildContext context) {
     final categoryListViewModel = Provider.of<CategoryListViewModel>(context);
@@ -28,6 +29,20 @@ class CategoryListView extends StatelessWidget {
       ),
       title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
       actions: [
+        InkWell(
+          child: const Icon(Icons.plus_one_outlined),
+          onTap: () {
+            // Logic to add a new category
+              viewModel.addCategory(
+                Category(
+                  title: 'New Category',
+                  description: 'New Description',
+                  createdAt: DateTime.now(),
+                  isDeleted: false,
+                ),
+              );
+          },
+        ),
         IconButton(
           onPressed: () {}, // 추가할 기능
           icon: const Icon(Icons.settings),
@@ -58,7 +73,7 @@ class CategoryListView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.edit),
+                    icon: const Icon(Icons.edit),
                     onPressed: () {
                       // Update with the specific category's ID
                       viewModel.updateCategory(
@@ -75,7 +90,7 @@ class CategoryListView extends StatelessWidget {
                     },
                   ),
                   IconButton(
-                    icon: Icon(Icons.delete),
+                    icon: const Icon(Icons.delete),
                     onPressed: () {
                       // Delete using the specific category's ID
                       viewModel.deleteCategory(category.id!);
@@ -91,32 +106,22 @@ class CategoryListView extends StatelessWidget {
   }
 
   Widget _myBottomBar(CategoryListViewModel viewModel) {
-    return SizedBox(
-      height: 60,
+    return BottomAppBar(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded,
-                color: Color.fromARGB(255, 203, 203, 203)),
-            onPressed: () {}, // 추가할 기능
-            iconSize: 40,
+            icon: const Icon(Icons.help_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
+            onPressed: () {},
+            iconSize: 40
           ),
+          const Spacer(),
           IconButton(
-            onPressed: () {
-              // Logic to add a new category
-              viewModel.addCategory(
-                Category(
-                  title: 'New Category',
-                  description: 'New Description',
-                  createdAt: DateTime.now(),
-                  isDeleted: false,
-                ),
-              );
-            },
-            icon: const Icon(Icons.add_circle_outline_rounded,
-                color: Color.fromARGB(255, 203, 203, 203)),
-          ),
+            icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
+            onPressed: () {},
+            iconSize: 40,
+          )
         ],
       ),
     );
