@@ -4,9 +4,10 @@ import '../view_model/category_list_view_model.dart';
 import '../../../data/model/category.dart';
 
 class CreateCategoryView extends StatefulWidget {
-  const CreateCategoryView({Key? key}) : super(key: key);
+  const CreateCategoryView({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CreateCategoryViewState createState() => _CreateCategoryViewState();
 }
 

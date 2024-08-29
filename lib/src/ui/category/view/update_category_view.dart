@@ -6,10 +6,10 @@ import '../../../data/model/category.dart';
 class UpdateCategoryView extends StatefulWidget {
   final int categoryId;
 
-  const UpdateCategoryView({Key? key, required this.categoryId})
-      : super(key: key);
+  const UpdateCategoryView({super.key, required this.categoryId});
 
   @override
+  // ignore: library_private_types_in_public_api
   _UpdateCategoryViewState createState() => _UpdateCategoryViewState();
 }
 
