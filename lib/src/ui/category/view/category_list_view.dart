@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
 import 'package:notelens_app/src/data/model/category.dart';
 import 'create_category_view.dart';
+import 'update_category_view.dart';
 
 class CategoryListView extends StatelessWidget {
   const CategoryListView({super.key});
@@ -30,20 +30,6 @@ class CategoryListView extends StatelessWidget {
       ),
       title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
       actions: [
-        InkWell(
-          child: const Icon(Icons.plus_one_outlined),
-          onTap: () {
-            // Logic to add a new category
-            viewModel.addCategory(
-              Category(
-                title: 'New Category',
-                description: 'New Description',
-                createdAt: DateTime.now(),
-                isDeleted: false,
-              ),
-            );
-          },
-        ),
         IconButton(
           onPressed: () {}, // 추가할 기능
           icon: const Icon(Icons.settings),
@@ -76,16 +62,10 @@ class CategoryListView extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
-                      // Update with the specific category's ID
-                      viewModel.updateCategory(
-                        // TODO : update 페이지로 이동
-                        Category(
-                          id: category
-                              .id, // Use the existing ID of the category
-                          title: 'Updated Category',
-                          description: 'Updated Description',
-                          createdAt: category.createdAt,
-                          isDeleted: category.isDeleted,
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              UpdateCategoryView(categoryId: category.id!),
                         ),
                       );
                     },
@@ -93,14 +73,42 @@ class CategoryListView extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {
-                      // Delete using the specific category's ID
-                      viewModel.deleteCategory(category.id!);
+                      _showDeleteConfirmationDialog(
+                          context, viewModel, category.id!);
                     },
                   ),
                 ],
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(
+      BuildContext context, CategoryListViewModel viewModel, int categoryId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('삭제 확인'),
+          content: const Text('이 카테고리를 삭제하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                viewModel.deleteCategory(categoryId); // 카테고리 삭제
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: const Text('확인'),
+            ),
+          ],
         );
       },
     );
