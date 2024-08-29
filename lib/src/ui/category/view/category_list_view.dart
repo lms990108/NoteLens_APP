@@ -106,32 +106,22 @@ class CategoryListView extends StatelessWidget {
   }
 
   Widget _myBottomBar(CategoryListViewModel viewModel) {
-    return SizedBox(
-      height: 60,
+    return BottomAppBar(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded,
-                color: Color.fromARGB(255, 203, 203, 203)),
-            onPressed: () {}, // 추가할 기능
-            iconSize: 40,
+            icon: const Icon(Icons.help_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
+            onPressed: () {},
+            iconSize: 40
           ),
+          const Spacer(),
           IconButton(
-            onPressed: () {
-              // Logic to add a new category
-              viewModel.addCategory(
-                Category(
-                  title: 'New Category',
-                  description: 'New Description',
-                  createdAt: DateTime.now(),
-                  isDeleted: false,
-                ),
-              );
-            },
-            icon: const Icon(Icons.add_circle_outline_rounded,
-                color: Color.fromARGB(255, 203, 203, 203)),
-          ),
+            icon: const Icon(Icons.add_circle_outline_rounded, color: Color.fromARGB(255, 203, 203, 203)),
+            onPressed: () {},
+            iconSize: 40,
+          )
         ],
       ),
     );
