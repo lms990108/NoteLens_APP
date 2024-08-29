@@ -258,7 +258,7 @@ class _CategoryListViewState extends State<CategoryListView> {
                 ),
               );
             },
-            child: Icon(
+            child: const Icon(
               Icons.add,
               size: 40,
             ),
