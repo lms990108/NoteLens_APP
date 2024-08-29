@@ -7,15 +7,10 @@ import 'package:provider/provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseUtils.initializeDatabase();
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<CategoryListViewModel>(
-          create: (_) => CategoryListViewModel())
-      ],
-      child: const MyApp()
-    )
-  );
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider<CategoryListViewModel>(
+        create: (_) => CategoryListViewModel())
+  ], child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -31,6 +26,6 @@ class MyApp extends StatelessWidget {
               seedColor: const Color.fromARGB(255, 0, 0, 0)),
           useMaterial3: true,
         ),
-        home: CategoryListView());
+        home: const CategoryListView());
   }
 }

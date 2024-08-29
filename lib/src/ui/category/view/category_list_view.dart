@@ -1,12 +1,20 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
-import 'package:notelens_app/src/data/model/category.dart';
 import 'create_category_view.dart';
 import 'update_category_view.dart';
 
-class CategoryListView extends StatelessWidget {
+class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
+
+  @override
+  _CategoryListViewState createState() => _CategoryListViewState();
+}
+
+class _CategoryListViewState extends State<CategoryListView> {
+  bool _isLeftBlurred = false; // 왼쪽 블러 상태를 관리하는 변수
+  bool _isRightBlurred = false; // 오른쪽 블러 상태를 관리하는 변수
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +22,16 @@ class CategoryListView extends StatelessWidget {
 
     return Scaffold(
       appBar: _myAppBar(categoryListViewModel),
-      body: _buildCategoryList(context, categoryListViewModel),
+      body: Stack(
+        children: [
+          _buildCategoryList(context, categoryListViewModel), // 기본 콘텐츠
+          if (_isLeftBlurred || _isRightBlurred)
+            _buildBlurredOverlay(), // 블러 효과 및 터치 감지
+          if (_isLeftBlurred) _buildBlurredLeftIcons(), // 왼쪽 블러 상태에서 나타나는 아이콘들
+          if (_isRightBlurred)
+            _buildBlurredRightIcons(), // 오른쪽 블러 상태에서 나타나는 아이콘들
+        ],
+      ),
       bottomNavigationBar: _myBottomBar(context, categoryListViewModel),
     );
   }
@@ -22,18 +39,24 @@ class CategoryListView extends StatelessWidget {
   PreferredSizeWidget _myAppBar(CategoryListViewModel viewModel) {
     return AppBar(
       backgroundColor: const Color.fromARGB(255, 206, 206, 206),
-      leading: IconButton(
-        icon: const Icon(Icons.sort),
-        onPressed: () {}, // 추가할 기능
-        tooltip: 'Sidebar',
-        iconSize: 30,
+      leading: InkWell(
+        child: const Icon(
+          Icons.sort,
+          size: 30,
+        ),
+        onTap: () {},
       ),
       title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
       actions: [
-        IconButton(
-          onPressed: () {}, // 추가할 기능
-          icon: const Icon(Icons.settings),
-          iconSize: 30,
+        InkWell(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(0, 0, 10, 0),
+            child: const Icon(
+              Icons.settings,
+              size: 30,
+            ),
+          ),
+          onTap: () {},
         ),
       ],
     );
@@ -41,7 +64,6 @@ class CategoryListView extends StatelessWidget {
 
   Widget _buildCategoryList(
       BuildContext context, CategoryListViewModel viewModel) {
-    // isDeleted가 false인 카테고리만 필터링
     final activeCategories = viewModel.categories
         .where((category) => category.isDeleted == false)
         .toList();
@@ -49,38 +71,58 @@ class CategoryListView extends StatelessWidget {
     return FutureBuilder(
       future: viewModel.fetchCategories(),
       builder: (context, snapshot) {
-        return ListView.builder(
-          itemCount: activeCategories.length,
-          itemBuilder: (context, index) {
-            final category = activeCategories[index];
-            return ListTile(
-              title: Text(category.title),
-              subtitle: Text(category.description ?? ''),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              UpdateCategoryView(categoryId: category.id!),
-                        ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      _showDeleteConfirmationDialog(
-                          context, viewModel, category.id!);
-                    },
-                  ),
-                ],
+        return Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.fromLTRB(12, 20, 0, 3),
+                alignment: Alignment.bottomLeft,
+                child: const Text("Category"),
               ),
-            );
-          },
+              Container(
+                height: 1,
+                width: double.infinity,
+                color: Colors.black,
+                margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: activeCategories.length,
+                  itemBuilder: (context, index) {
+                    final category = activeCategories[index];
+                    return ListTile(
+                      title: Text(category.title),
+                      subtitle: Text(category.description ?? ''),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => UpdateCategoryView(
+                                      categoryId: category.id!),
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              _showDeleteConfirmationDialog(
+                                  context, viewModel, category.id!);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -114,30 +156,128 @@ class CategoryListView extends StatelessWidget {
     );
   }
 
+  Widget _buildBlurredOverlay() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isLeftBlurred = false; // 왼쪽 블러 상태 초기화
+          _isRightBlurred = false; // 오른쪽 블러 상태 초기화
+        });
+      },
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // 블러 효과 적용
+        child: Container(
+          color: Colors.black.withOpacity(0), // 블러 처리된 부분의 배경색 (투명하게 유지)
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlurredLeftIcons() {
+    return const Positioned(
+      bottom: 15,
+      left: 15, // 좌측에 배치
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.send, size: 30),
+              SizedBox(width: 8),
+              Text('Report / Feedback'),
+            ],
+          ),
+          SizedBox(height: 15),
+          Row(
+            children: [
+              Icon(Icons.book, size: 30),
+              SizedBox(width: 8),
+              Text('How to use'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlurredRightIcons() {
+    return const Positioned(
+      bottom: 15,
+      right: 15, // 우측에 배치
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            children: [
+              Text('Select file'),
+              SizedBox(width: 8),
+              Icon(Icons.file_open, size: 30),
+            ],
+          ),
+          SizedBox(height: 15),
+          Row(
+            children: [
+              Text('Take a picture'),
+              SizedBox(width: 8),
+              Icon(Icons.camera_alt, size: 30),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _myBottomBar(BuildContext context, CategoryListViewModel viewModel) {
     return BottomAppBar(
+      height: 50,
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
+      padding: const EdgeInsets.all(10),
       child: Row(
         children: [
-          IconButton(
-              icon: const Icon(Icons.help_outline_rounded,
-                  color: Color.fromARGB(255, 203, 203, 203)),
-              onPressed: () {},
-              iconSize: 40),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isLeftBlurred = !_isLeftBlurred; // 왼쪽 블러 상태를 토글
+                if (_isRightBlurred) _isRightBlurred = false; // 오른쪽 블러 상태를 끔
+              });
+            },
+            child: Icon(
+              Icons.help_outline_rounded,
+              color: _isLeftBlurred
+                  ? Colors.black
+                  : const Color.fromARGB(255, 203, 203, 203), // 조건부 색상 변경
+              size: 40,
+            ),
+          ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded,
-                color: Color.fromARGB(255, 203, 203, 203)),
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const CreateCategoryView(),
                 ),
               );
             },
-            iconSize: 40,
-          )
+            child: const Icon(
+              Icons.add,
+              size: 40,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isRightBlurred = !_isRightBlurred; // 오른쪽 블러 상태를 토글
+                if (_isLeftBlurred) _isLeftBlurred = false; // 왼쪽 블러 상태를 끔
+              });
+            },
+            child: Icon(
+              Icons.add_circle_outline_rounded,
+              color: _isRightBlurred
+                  ? Colors.black
+                  : const Color.fromARGB(255, 203, 203, 203),
+              size: 40,
+            ),
+          ),
         ],
       ),
     );
