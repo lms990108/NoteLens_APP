@@ -6,6 +6,7 @@ import 'create_category_view.dart';
 import 'update_category_view.dart';
 import 'package:image_picker/image_picker.dart';
 
+// 카테고리 리스트 뷰 위젯
 class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
 
@@ -13,21 +14,25 @@ class CategoryListView extends StatefulWidget {
   _CategoryListViewState createState() => _CategoryListViewState();
 }
 
+// 카테고리 리스트 뷰의 상태 관리 클래스
 class _CategoryListViewState extends State<CategoryListView> {
-  bool _isLeftBlurred = false; // 왼쪽 블러 상태를 관리하는 변수
-  bool _isRightBlurred = false; // 오른쪽 블러 상태를 관리하는 변수
+  // 왼쪽 블러 상태를 관리하는 변수
+  bool _isLeftBlurred = false;
+  // 오른쪽 블러 상태를 관리하는 변수
+  bool _isRightBlurred = false;
 
   @override
   Widget build(BuildContext context) {
+    // 카테고리 리스트의 뷰모델을 가져옴
     final categoryListViewModel = Provider.of<CategoryListViewModel>(context);
 
     return Scaffold(
       appBar: _myAppBar(categoryListViewModel),
       body: Stack(
         children: [
-          _buildCategoryList(context, categoryListViewModel), // 기본 콘텐츠
+          _buildCategoryList(context, categoryListViewModel), // 카테고리 리스트를 빌드
           if (_isLeftBlurred || _isRightBlurred)
-            _buildBlurredOverlay(), // 블러 효과 및 터치 감지
+            _buildBlurredOverlay(), // 블러 효과와 터치 감지
           if (_isLeftBlurred) _buildBlurredLeftIcons(), // 왼쪽 블러 상태에서 나타나는 아이콘들
           if (_isRightBlurred)
             _buildBlurredRightIcons(), // 오른쪽 블러 상태에서 나타나는 아이콘들
@@ -37,6 +42,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  // 앱 바를 생성하는 메서드
   PreferredSizeWidget _myAppBar(CategoryListViewModel viewModel) {
     return AppBar(
       backgroundColor: const Color.fromARGB(255, 206, 206, 206),
@@ -45,7 +51,7 @@ class _CategoryListViewState extends State<CategoryListView> {
           Icons.sort,
           size: 30,
         ),
-        onTap: () {},
+        onTap: () {}, // 정렬 아이콘 클릭 시 수행할 동작 (현재 비어 있음)
       ),
       title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
       actions: [
@@ -57,47 +63,53 @@ class _CategoryListViewState extends State<CategoryListView> {
               size: 30,
             ),
           ),
-          onTap: () {},
+          onTap: () {}, // 설정 아이콘 클릭 시 수행할 동작 (현재 비어 있음)
         ),
       ],
     );
   }
 
+  // 카테고리 리스트를 생성하는 위젯
   Widget _buildCategoryList(
       BuildContext context, CategoryListViewModel viewModel) {
+    // 삭제되지 않은 카테고리만 필터링
     final activeCategories = viewModel.categories
         .where((category) => category.isDeleted == false)
         .toList();
 
     return FutureBuilder(
-      future: viewModel.fetchCategories(),
+      future: viewModel.fetchCategories(), // 카테고리 데이터를 비동기적으로 가져옴
       builder: (context, snapshot) {
         return Container(
           color: Colors.white,
           child: Column(
             children: [
+              // 카테고리 헤더
               Container(
                 margin: const EdgeInsets.fromLTRB(12, 20, 0, 3),
                 alignment: Alignment.bottomLeft,
                 child: const Text("Category"),
               ),
+              // 구분선
               Container(
                 height: 1,
                 width: double.infinity,
                 color: Colors.black,
                 margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
               ),
+              // 카테고리 리스트
               Expanded(
                 child: ListView.builder(
                   itemCount: activeCategories.length,
                   itemBuilder: (context, index) {
                     final category = activeCategories[index];
                     return ListTile(
-                      title: Text(category.title),
-                      subtitle: Text(category.description ?? ''),
+                      title: Text(category.title), // 카테고리 제목
+                      subtitle: Text(category.description ?? ''), // 카테고리 설명
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // 카테고리 수정 버튼
                           IconButton(
                             icon: const Icon(Icons.edit),
                             onPressed: () {
@@ -109,6 +121,7 @@ class _CategoryListViewState extends State<CategoryListView> {
                               );
                             },
                           ),
+                          // 카테고리 삭제 버튼
                           IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () {
@@ -129,6 +142,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  // 카테고리 삭제 확인 다이얼로그를 표시하는 메서드
   void _showDeleteConfirmationDialog(
       BuildContext context, CategoryListViewModel viewModel, int categoryId) {
     showDialog(
@@ -138,12 +152,14 @@ class _CategoryListViewState extends State<CategoryListView> {
           title: const Text('삭제 확인'),
           content: const Text('이 카테고리를 삭제하시겠습니까?'),
           actions: <Widget>[
+            // 취소 버튼
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // 다이얼로그 닫기
               },
               child: const Text('취소'),
             ),
+            // 확인 버튼
             TextButton(
               onPressed: () {
                 viewModel.deleteCategory(categoryId); // 카테고리 삭제
@@ -157,6 +173,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  // 블러 효과와 터치 감지를 위한 오버레이 위젯
   Widget _buildBlurredOverlay() {
     return GestureDetector(
       onTap: () {
@@ -174,6 +191,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  // 왼쪽 블러 상태에서 나타나는 아이콘들을 표시하는 위젯
   Widget _buildBlurredLeftIcons() {
     return const Positioned(
       bottom: 15,
@@ -201,6 +219,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  // 오른쪽 블러 상태에서 나타나는 아이콘들을 표시하는 위젯
   Widget _buildBlurredRightIcons() {
     return Positioned(
       bottom: 15,
@@ -208,6 +227,7 @@ class _CategoryListViewState extends State<CategoryListView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // 파일 선택 버튼
           GestureDetector(
             onTap: () {
               _pickImage(ImageSource.gallery); // 갤러리에서 이미지 선택 기능 호출
@@ -221,6 +241,7 @@ class _CategoryListViewState extends State<CategoryListView> {
             ),
           ),
           const SizedBox(height: 15),
+          // 사진 촬영 버튼
           GestureDetector(
             onTap: () {
               _pickImage(ImageSource.camera); // 카메라로 사진 촬영 기능 호출
@@ -238,7 +259,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 이미지 선택 또는 촬영을 위한 메서드 추가
+  // 이미지 선택 또는 촬영을 위한 메서드
   Future<void> _pickImage(ImageSource source) async {
     try {
       final ImagePicker _picker = ImagePicker();
@@ -256,6 +277,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     }
   }
 
+  // 에러 발생 시 에러 메시지를 표시하는 다이얼로그 메서드
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -264,6 +286,7 @@ class _CategoryListViewState extends State<CategoryListView> {
           title: const Text('Error'),
           content: Text(message),
           actions: <Widget>[
+            // 확인 버튼
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // 다이얼로그 닫기
@@ -276,6 +299,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  // 하단 바를 생성하는 위젯
   Widget _myBottomBar(BuildContext context, CategoryListViewModel viewModel) {
     return BottomAppBar(
       height: 50,
@@ -299,6 +323,7 @@ class _CategoryListViewState extends State<CategoryListView> {
             ),
           ),
           const Spacer(),
+          // 새 카테고리 추가 버튼
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
