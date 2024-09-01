@@ -73,15 +73,6 @@ class _CreateCategoryViewState extends State<CreateCategoryView> {
                   _description = value;
                 },
               ),
-              SwitchListTile(
-                title: const Text('삭제됨 여부'),
-                value: _isDeleted,
-                onChanged: (value) {
-                  setState(() {
-                    _isDeleted = value;
-                  });
-                },
-              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => _submitForm(categoryListViewModel),
