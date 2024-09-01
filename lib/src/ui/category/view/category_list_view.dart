@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
 import 'create_category_view.dart';
 import 'update_category_view.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
@@ -201,29 +202,77 @@ class _CategoryListViewState extends State<CategoryListView> {
   }
 
   Widget _buildBlurredRightIcons() {
-    return const Positioned(
+    return Positioned(
       bottom: 15,
       right: 15, // 우측에 배치
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Row(
-            children: [
-              Text('Select file'),
-              SizedBox(width: 8),
-              Icon(Icons.file_open, size: 30),
-            ],
+          GestureDetector(
+            onTap: () {
+              _pickImage(ImageSource.gallery); // 갤러리에서 이미지 선택 기능 호출
+            },
+            child: Row(
+              children: [
+                const Text('Select file'),
+                const SizedBox(width: 8),
+                const Icon(Icons.file_open, size: 30),
+              ],
+            ),
           ),
-          SizedBox(height: 15),
-          Row(
-            children: [
-              Text('Take a picture'),
-              SizedBox(width: 8),
-              Icon(Icons.camera_alt, size: 30),
-            ],
+          const SizedBox(height: 15),
+          GestureDetector(
+            onTap: () {
+              _pickImage(ImageSource.camera); // 카메라로 사진 촬영 기능 호출
+            },
+            child: Row(
+              children: [
+                const Text('Take a picture'),
+                const SizedBox(width: 8),
+                const Icon(Icons.camera_alt, size: 30),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  // 이미지 선택 또는 촬영을 위한 메서드 추가
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final ImagePicker _picker = ImagePicker();
+      final pickedFile = await _picker.pickImage(source: source);
+
+      if (pickedFile != null) {
+        // 선택된 이미지를 처리하는 로직 추가 (예: 이미지 표시, 업로드 등)
+        print('Selected image path: ${pickedFile.path}');
+      } else {
+        print('No image selected.');
+      }
+    } catch (e) {
+      print('An error occurred while picking an image: $e');
+      _showErrorDialog(context, 'An error occurred while picking an image.');
+    }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 
