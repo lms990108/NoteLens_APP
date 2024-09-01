@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:notelens_app/src/data/model/category.dart';
 import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
 import 'create_category_view.dart';
@@ -87,33 +88,32 @@ class _CategoryListViewState extends State<CategoryListView> {
                 margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
               ),
               Expanded(
-                child: ListView.builder(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, // 한 줄에 두 개의 카테고리를 표시
+                    crossAxisSpacing: 10.0, // 열 간 간격
+                    mainAxisSpacing: 10.0, // 행 간 간격
+                    childAspectRatio: 1, // 폴더 아이콘의 가로 세로 비율
+                  ),
                   itemCount: activeCategories.length,
                   itemBuilder: (context, index) {
                     final category = activeCategories[index];
-                    return ListTile(
-                      title: Text(category.title),
-                      subtitle: Text(category.description ?? ''),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+                    return GestureDetector(
+                      onLongPress: () {
+                        _showCategoryOptions(context, viewModel, category);
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => UpdateCategoryView(
-                                      categoryId: category.id!),
-                                ),
-                              );
-                            },
+                          const Icon(
+                            Icons.folder_rounded,
+                            size: 64,
+                            color: Colors.black54,
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              _showDeleteConfirmationDialog(
-                                  context, viewModel, category.id!);
-                            },
+                          const SizedBox(height: 8),
+                          Text(
+                            category.title,
+                            style: const TextStyle(fontSize: 16),
                           ),
                         ],
                       ),
@@ -128,27 +128,61 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
+  void _showCategoryOptions(BuildContext context,
+      CategoryListViewModel viewModel, Category category) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('수정'),
+              onTap: () {
+                Navigator.of(context).pop(); // 메뉴 닫기
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        UpdateCategoryView(categoryId: category.id!),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('삭제'),
+              onTap: () {
+                Navigator.of(context).pop(); // 메뉴 닫기
+                _showDeleteConfirmationDialog(context, viewModel, category.id!);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showDeleteConfirmationDialog(
       BuildContext context, CategoryListViewModel viewModel, int categoryId) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('삭제 확인'),
-          content: const Text('이 카테고리를 삭제하시겠습니까?'),
+          title: const Text('카테고리 삭제'),
+          content: const Text('선택한 카테고리를 삭제하시겠습니까?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-              },
               child: const Text('취소'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
             TextButton(
+              child: const Text('삭제'),
               onPressed: () {
-                viewModel.deleteCategory(categoryId); // 카테고리 삭제
-                Navigator.of(context).pop(); // 다이얼로그 닫기
+                viewModel.deleteCategory(categoryId);
+                Navigator.of(context).pop();
               },
-              child: const Text('확인'),
             ),
           ],
         );
