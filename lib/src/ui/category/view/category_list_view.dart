@@ -11,6 +11,7 @@ class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CategoryListViewState createState() => _CategoryListViewState();
 }
 
@@ -232,11 +233,11 @@ class _CategoryListViewState extends State<CategoryListView> {
             onTap: () {
               _pickImage(ImageSource.gallery); // 갤러리에서 이미지 선택 기능 호출
             },
-            child: Row(
+            child: const Row(
               children: [
-                const Text('Select file'),
-                const SizedBox(width: 8),
-                const Icon(Icons.file_open, size: 30),
+                Text('Select file'),
+                SizedBox(width: 8),
+                Icon(Icons.file_open, size: 30),
               ],
             ),
           ),
@@ -246,11 +247,11 @@ class _CategoryListViewState extends State<CategoryListView> {
             onTap: () {
               _pickImage(ImageSource.camera); // 카메라로 사진 촬영 기능 호출
             },
-            child: Row(
+            child: const Row(
               children: [
-                const Text('Take a picture'),
-                const SizedBox(width: 8),
-                const Icon(Icons.camera_alt, size: 30),
+                Text('Take a picture'),
+                SizedBox(width: 8),
+                Icon(Icons.camera_alt, size: 30),
               ],
             ),
           ),
@@ -262,9 +263,10 @@ class _CategoryListViewState extends State<CategoryListView> {
   // 이미지 선택 또는 촬영을 위한 메서드
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final ImagePicker _picker = ImagePicker();
-      final pickedFile = await _picker.pickImage(source: source);
+      final ImagePicker picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: source);
 
+      // TODO : Notelens 서버 API 호출로직 필요
       if (pickedFile != null) {
         // 선택된 이미지를 처리하는 로직 추가 (예: 이미지 표시, 업로드 등)
         print('Selected image path: ${pickedFile.path}');
@@ -273,6 +275,7 @@ class _CategoryListViewState extends State<CategoryListView> {
       }
     } catch (e) {
       print('An error occurred while picking an image: $e');
+      // ignore: use_build_context_synchronously
       _showErrorDialog(context, 'An error occurred while picking an image.');
     }
   }
