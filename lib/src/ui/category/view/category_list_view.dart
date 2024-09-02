@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
 import 'create_category_view.dart';
 import 'update_category_view.dart';
+import 'how_to_use_view.dart';
 
 class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
@@ -28,7 +29,8 @@ class _CategoryListViewState extends State<CategoryListView> {
           _buildCategoryList(context, categoryListViewModel), // 기본 콘텐츠
           if (_isLeftBlurred || _isRightBlurred)
             _buildBlurredOverlay(), // 블러 효과 및 터치 감지
-          if (_isLeftBlurred) _buildBlurredLeftIcons(), // 왼쪽 블러 상태에서 나타나는 아이콘들
+          if (_isLeftBlurred)
+            _buildBlurredLeftIcons(context), // 왼쪽 블러 상태에서 나타나는 아이콘들
           if (_isRightBlurred)
             _buildBlurredRightIcons(), // 오른쪽 블러 상태에서 나타나는 아이콘들
         ],
@@ -207,27 +209,38 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  Widget _buildBlurredLeftIcons() {
-    return const Positioned(
+  Widget _buildBlurredLeftIcons(BuildContext context) {
+    return Positioned(
       bottom: 15,
       left: 15, // 좌측에 배치
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.send, size: 30),
               SizedBox(width: 8),
               Text('Report / Feedback'),
             ],
           ),
-          SizedBox(height: 15),
-          Row(
-            children: [
-              Icon(Icons.book, size: 30),
-              SizedBox(width: 8),
-              Text('How to use'),
-            ],
+          const SizedBox(height: 15),
+          GestureDetector(
+            onTap: () {
+              // 'How to use' 화면으로 이동하는 코드
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const HowToUseView(), // 'How to use' 화면으로 이동
+                ),
+              );
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.book, size: 30),
+                SizedBox(width: 8),
+                Text('How to use'),
+              ],
+            ),
           ),
         ],
       ),
