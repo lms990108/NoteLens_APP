@@ -1,11 +1,14 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:notelens_app/src/data/model/category.dart';
-import 'package:provider/provider.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
+import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import 'create_category_view.dart';
 import 'update_category_view.dart';
-import 'package:image_picker/image_picker.dart';
 import 'how_to_use_view.dart';
 
 // 카테고리 리스트 뷰 위젯
@@ -13,7 +16,6 @@ class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CategoryListViewState createState() => _CategoryListViewState();
 }
 
@@ -26,27 +28,22 @@ class _CategoryListViewState extends State<CategoryListView> {
 
   @override
   Widget build(BuildContext context) {
-    // 카테고리 리스트의 뷰모델을 가져옴
     final categoryListViewModel = Provider.of<CategoryListViewModel>(context);
 
     return Scaffold(
       appBar: _myAppBar(categoryListViewModel),
       body: Stack(
         children: [
-          _buildCategoryList(context, categoryListViewModel), // 카테고리 리스트를 빌드
-          if (_isLeftBlurred || _isRightBlurred)
-            _buildBlurredOverlay(), // 블러 효과 및 터치 감지
-          if (_isLeftBlurred)
-            _buildBlurredLeftIcons(context), // 왼쪽 블러 상태에서 나타나는 아이콘들
-          if (_isRightBlurred)
-            _buildBlurredRightIcons(), // 오른쪽 블러 상태에서 나타나는 아이콘들
+          _buildCategoryList(context, categoryListViewModel),
+          if (_isLeftBlurred || _isRightBlurred) _buildBlurredOverlay(),
+          if (_isLeftBlurred) _buildBlurredLeftIcons(context),
+          if (_isRightBlurred) _buildBlurredRightIcons(),
         ],
       ),
       bottomNavigationBar: _myBottomBar(context, categoryListViewModel),
     );
   }
 
-  // 앱 바를 생성하는 메서드
   PreferredSizeWidget _myAppBar(CategoryListViewModel viewModel) {
     return AppBar(
       backgroundColor: const Color.fromARGB(255, 206, 206, 206),
@@ -73,42 +70,37 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 카테고리 리스트를 생성하는 위젯
   Widget _buildCategoryList(
       BuildContext context, CategoryListViewModel viewModel) {
-    // 삭제되지 않은 카테고리만 필터링
     final activeCategories = viewModel.categories
         .where((category) => category.isDeleted == false)
         .toList();
 
     return FutureBuilder(
-      future: viewModel.fetchCategories(), // 카테고리 데이터를 비동기적으로 가져옴
+      future: viewModel.fetchCategories(),
       builder: (context, snapshot) {
         return Container(
           color: Colors.white,
           child: Column(
             children: [
-              // 카테고리 헤더
               Container(
                 margin: const EdgeInsets.fromLTRB(12, 20, 0, 3),
                 alignment: Alignment.bottomLeft,
                 child: const Text("Category"),
               ),
-              // 구분선
               Container(
                 height: 1,
                 width: double.infinity,
                 color: Colors.black,
                 margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
               ),
-              // 카테고리 리스트
               Expanded(
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // 한 줄에 두 개의 카테고리를 표시
-                    crossAxisSpacing: 10.0, // 열 간 간격
-                    mainAxisSpacing: 10.0, // 행 간 간격
-                    childAspectRatio: 1, // 폴더 아이콘의 가로 세로 비율
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10.0,
+                    mainAxisSpacing: 10.0,
+                    childAspectRatio: 1,
                   ),
                   itemCount: activeCategories.length,
                   itemBuilder: (context, index) {
@@ -167,7 +159,7 @@ class _CategoryListViewState extends State<CategoryListView> {
               leading: const Icon(Icons.delete),
               title: const Text('삭제'),
               onTap: () {
-                Navigator.of(context).pop(); // 메뉴 닫기
+                Navigator.of(context).pop();
                 _showDeleteConfirmationDialog(context, viewModel, category.id!);
               },
             ),
@@ -186,14 +178,12 @@ class _CategoryListViewState extends State<CategoryListView> {
           title: const Text('카테고리 삭제'),
           content: const Text('선택한 카테고리를 삭제하시겠습니까?'),
           actions: <Widget>[
-            // 취소 버튼
             TextButton(
               child: const Text('취소'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            // 확인 버튼
             TextButton(
               child: const Text('삭제'),
               onPressed: () {
@@ -207,29 +197,27 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 블러 효과와 터치 감지를 위한 오버레이 위젯
   Widget _buildBlurredOverlay() {
     return GestureDetector(
       onTap: () {
         setState(() {
-          _isLeftBlurred = false; // 왼쪽 블러 상태 초기화
-          _isRightBlurred = false; // 오른쪽 블러 상태 초기화
+          _isLeftBlurred = false;
+          _isRightBlurred = false;
         });
       },
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), // 블러 효과 적용
+        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
         child: Container(
-          color: Colors.black.withOpacity(0), // 블러 처리된 부분의 배경색 (투명하게 유지)
+          color: Colors.black.withOpacity(0),
         ),
       ),
     );
   }
 
-  // 왼쪽 블러 상태에서 나타나는 아이콘들을 표시하는 위젯
   Widget _buildBlurredLeftIcons(BuildContext context) {
     return Positioned(
       bottom: 15,
-      left: 15, // 좌측에 배치
+      left: 15,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -243,11 +231,9 @@ class _CategoryListViewState extends State<CategoryListView> {
           const SizedBox(height: 15),
           GestureDetector(
             onTap: () {
-              // 'How to use' 화면으로 이동하는 코드
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) =>
-                      const HowToUseView(), // 'How to use' 화면으로 이동
+                  builder: (context) => const HowToUseView(),
                 ),
               );
             },
@@ -264,18 +250,17 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 오른쪽 블러 상태에서 나타나는 아이콘들을 표시하는 위젯
   Widget _buildBlurredRightIcons() {
     return Positioned(
       bottom: 15,
-      right: 15, // 우측에 배치
+      right: 15,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // 파일 선택 버튼
           GestureDetector(
             onTap: () {
-              _pickImage(ImageSource.gallery); // 갤러리에서 이미지 선택 기능 호출
+              _showFileOrImagePicker(); // 파일 또는 이미지 선택 옵션 제공
             },
             child: const Row(
               children: [
@@ -304,23 +289,100 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 이미지 선택 또는 촬영을 위한 메서드
+  // 파일 또는 이미지 선택을 위한 옵션 제공
+  void _showFileOrImagePicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file),
+              title: const Text('파일 선택하기'),
+              onTap: () {
+                Navigator.of(context).pop(); // BottomSheet 닫기
+                _pickFile(); // 파일 선택 기능 호출
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('이미지 선택하기'),
+              onTap: () {
+                Navigator.of(context).pop(); // BottomSheet 닫기
+                _pickImage(ImageSource.gallery); // 갤러리에서 이미지 선택
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 이미지 촬영 또는 갤러리에서 선택을 위한 메서드
   Future<void> _pickImage(ImageSource source) async {
     try {
       final ImagePicker picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
 
-      // TODO : Notelens 서버 API 호출로직 필요
       if (pickedFile != null) {
-        // 선택된 이미지를 처리하는 로직 추가 (예: 이미지 표시, 업로드 등)
-        print('Selected image path: ${pickedFile.path}');
+        File imageFile = File(pickedFile.path);
+
+        // API 요청 전송
+        await _uploadFileToServer(imageFile);
       } else {
         print('No image selected.');
       }
     } catch (e) {
       print('An error occurred while picking an image: $e');
-      // ignore: use_build_context_synchronously
       _showErrorDialog(context, 'An error occurred while picking an image.');
+    }
+  }
+
+  // 파일 선택을 위한 메서드 (모든 파일 형식)
+  Future<void> _pickFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.any, // 모든 파일 형식 허용
+      );
+
+      if (result != null) {
+        File file = File(result.files.single.path!);
+
+        // API 요청 전송
+        await _uploadFileToServer(file);
+      } else {
+        print('No file selected.');
+      }
+    } catch (e) {
+      print('An error occurred while picking a file: $e');
+      _showErrorDialog(context, 'An error occurred while picking a file.');
+    }
+  }
+
+  // 서버로 이미지를 업로드하는 메서드
+  Future<void> _uploadFileToServer(File file) async {
+    final String apiUrl =
+        'http://13.124.185.96:8001/api/yolo/yolo'; // API 엔드포인트 주소
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+
+      // 파일을 멀티파트 요청에 추가
+      request.files.add(await http.MultipartFile.fromPath(
+        'image', // 서버에서 기대하는 파일 필드 이름
+        file.path,
+      ));
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        print('File uploaded successfully');
+      } else {
+        print('Failed to upload file: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('An error occurred during the upload: $e');
+      _showErrorDialog(context, 'An error occurred during the upload.');
     }
   }
 
@@ -333,10 +395,9 @@ class _CategoryListViewState extends State<CategoryListView> {
           title: const Text('Error'),
           content: Text(message),
           actions: <Widget>[
-            // 확인 버튼
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
+                Navigator.of(context).pop();
               },
               child: const Text('OK'),
             ),
@@ -346,7 +407,6 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 하단 바를 생성하는 위젯
   Widget _myBottomBar(BuildContext context, CategoryListViewModel viewModel) {
     return BottomAppBar(
       height: 50,
@@ -357,20 +417,19 @@ class _CategoryListViewState extends State<CategoryListView> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _isLeftBlurred = !_isLeftBlurred; // 왼쪽 블러 상태를 토글
-                if (_isRightBlurred) _isRightBlurred = false; // 오른쪽 블러 상태를 끔
+                _isLeftBlurred = !_isLeftBlurred;
+                if (_isRightBlurred) _isRightBlurred = false;
               });
             },
             child: Icon(
               Icons.help_outline_rounded,
               color: _isLeftBlurred
                   ? Colors.black
-                  : const Color.fromARGB(255, 203, 203, 203), // 조건부 색상 변경
+                  : const Color.fromARGB(255, 203, 203, 203),
               size: 40,
             ),
           ),
           const Spacer(),
-          // 새 카테고리 추가 버튼
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -387,8 +446,8 @@ class _CategoryListViewState extends State<CategoryListView> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _isRightBlurred = !_isRightBlurred; // 오른쪽 블러 상태를 토글
-                if (_isLeftBlurred) _isLeftBlurred = false; // 왼쪽 블러 상태를 끔
+                _isRightBlurred = !_isRightBlurred;
+                if (_isLeftBlurred) _isLeftBlurred = false;
               });
             },
             child: Icon(
