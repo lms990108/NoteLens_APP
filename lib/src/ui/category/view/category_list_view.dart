@@ -7,7 +7,8 @@ import 'create_category_view.dart';
 import 'update_category_view.dart';
 import 'package:image_picker/image_picker.dart';
 import 'how_to_use_view.dart';
-import '../../question/question_list_view.dart';
+import '../../question/view/question_list_view.dart';
+import '../../question/view/question_extract_view.dart';
 
 // 카테고리 리스트 뷰 위젯
 class CategoryListView extends StatefulWidget {
@@ -376,12 +377,25 @@ class _CategoryListViewState extends State<CategoryListView> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => QuestionListView(),
+                  builder: (context) => const QuestionListView(),
                 ),
               );
             },
             child: const Icon(
-              Icons.add,
+              Icons.one_k,
+              size: 40,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const QuestionExtractView(),
+                ),
+              );
+            },
+            child: const Icon(
+              Icons.two_k,
               size: 40,
             ),
           ),
