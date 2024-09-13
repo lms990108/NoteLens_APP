@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'create_category_view.dart';
 import 'update_category_view.dart';
 import 'how_to_use_view.dart';
+import 'dart:convert'; // JSON 파싱을 위한 라이브러리
 
 // 카테고리 리스트 뷰 위젯
 class CategoryListView extends StatefulWidget {
@@ -359,7 +360,7 @@ class _CategoryListViewState extends State<CategoryListView> {
     }
   }
 
-  // 서버로 이미지를 업로드하는 메서드
+// 서버로 이미지를 업로드하는 메서드
   Future<void> _uploadFileToServer(File file) async {
     final String apiUrl =
         'http://13.124.185.96:8001/api/yolo/yolo'; // API 엔드포인트 주소
@@ -369,16 +370,23 @@ class _CategoryListViewState extends State<CategoryListView> {
 
       // 파일을 멀티파트 요청에 추가
       request.files.add(await http.MultipartFile.fromPath(
-        'image', // 서버에서 기대하는 파일 필드 이름
+        'file', // 서버에서 기대하는 파일 필드 이름
         file.path,
       ));
 
       var response = await request.send();
 
+      // 응답 본문을 받아서 JSON 파싱
+      var responseBody = await response.stream.bytesToString();
+
       if (response.statusCode == 200) {
+        // 서버에서 전송한 JSON을 파싱
+        var jsonResponse = jsonDecode(responseBody);
         print('File uploaded successfully');
+        print('Server Response: $jsonResponse'); // 서버의 JSON 응답 출력
       } else {
         print('Failed to upload file: ${response.statusCode}');
+        print('Response: $responseBody'); // 에러 발생 시 서버 응답 출력
       }
     } catch (e) {
       print('An error occurred during the upload: $e');
