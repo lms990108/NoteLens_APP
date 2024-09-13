@@ -7,6 +7,7 @@ import 'create_category_view.dart';
 import 'update_category_view.dart';
 import 'package:image_picker/image_picker.dart';
 import 'how_to_use_view.dart';
+import '../../question/question_list_view.dart';
 
 // 카테고리 리스트 뷰 위젯
 class CategoryListView extends StatefulWidget {
@@ -371,6 +372,19 @@ class _CategoryListViewState extends State<CategoryListView> {
           ),
           const Spacer(),
           // 새 카테고리 추가 버튼
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => QuestionListView(),
+                ),
+              );
+            },
+            child: const Icon(
+              Icons.add,
+              size: 40,
+            ),
+          ),
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
