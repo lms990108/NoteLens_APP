@@ -2,19 +2,17 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:notelens_app/src/data/model/category.dart';
+import 'package:notelens_app/src/ui/category/view/create_category_view.dart';
+import 'package:notelens_app/src/ui/category/view/how_to_use_view.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
+import 'package:notelens_app/src/ui/question/view/question_list_view.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
-import 'create_category_view.dart';
-import 'update_category_view.dart';
-import 'how_to_use_view.dart';
-import '../../question/view/question_list_view.dart';
+import 'dart:convert';
 import '../../question/view/question_extract_view.dart';
-import 'dart:convert'; // JSON 파싱을 위한 라이브러리
 
-// 카테고리 리스트 뷰 위젯
 class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
 
@@ -22,12 +20,10 @@ class CategoryListView extends StatefulWidget {
   _CategoryListViewState createState() => _CategoryListViewState();
 }
 
-// 카테고리 리스트 뷰의 상태 관리 클래스
 class _CategoryListViewState extends State<CategoryListView> {
-  // 왼쪽 블러 상태를 관리하는 변수
   bool _isLeftBlurred = false;
-  // 오른쪽 블러 상태를 관리하는 변수
   bool _isRightBlurred = false;
+  File? selectedFile; // 선택된 파일을 저장할 변수
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +51,7 @@ class _CategoryListViewState extends State<CategoryListView> {
           Icons.sort,
           size: 30,
         ),
-        onTap: () {}, // 정렬 아이콘 클릭 시 수행할 동작 (현재 비어 있음)
+        onTap: () {}, // 정렬 아이콘 클릭 시 수행할 동작
       ),
       title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
       actions: [
@@ -67,7 +63,7 @@ class _CategoryListViewState extends State<CategoryListView> {
               size: 30,
             ),
           ),
-          onTap: () {}, // 설정 아이콘 클릭 시 수행할 동작 (현재 비어 있음)
+          onTap: () {}, // 설정 아이콘 클릭 시 수행할 동작
         ),
       ],
     );
@@ -150,12 +146,7 @@ class _CategoryListViewState extends State<CategoryListView> {
               title: const Text('수정'),
               onTap: () {
                 Navigator.of(context).pop(); // 메뉴 닫기
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        UpdateCategoryView(categoryId: category.id!),
-                  ),
-                );
+                // 카테고리 수정 화면으로 이동
               },
             ),
             ListTile(
@@ -260,7 +251,6 @@ class _CategoryListViewState extends State<CategoryListView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 파일 선택 버튼
           GestureDetector(
             onTap: () {
               _showFileOrImagePicker(); // 파일 또는 이미지 선택 옵션 제공
@@ -274,7 +264,6 @@ class _CategoryListViewState extends State<CategoryListView> {
             ),
           ),
           const SizedBox(height: 15),
-          // 사진 촬영 버튼
           GestureDetector(
             onTap: () {
               _pickImage(ImageSource.camera); // 카메라로 사진 촬영 기능 호출
@@ -292,7 +281,6 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 파일 또는 이미지 선택을 위한 옵션 제공
   void _showFileOrImagePicker() {
     showModalBottomSheet(
       context: context,
@@ -321,7 +309,6 @@ class _CategoryListViewState extends State<CategoryListView> {
     );
   }
 
-  // 이미지 촬영 또는 갤러리에서 선택을 위한 메서드
   Future<void> _pickImage(ImageSource source) async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -330,8 +317,32 @@ class _CategoryListViewState extends State<CategoryListView> {
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
 
-        // API 요청 전송
-        await _uploadFileToServer(imageFile);
+        // QuestionExtractView로 이동하여 로딩 화면 표시
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const QuestionExtractView(),
+        ));
+
+        // API 요청 전송 및 응답 처리
+        final response = await _uploadFileToServer(imageFile);
+
+        if (response != null) {
+          // 서버 응답 출력
+          print("Server Response: $response");
+
+          // 서버 응답의 questions와 contents를 검증하고 기본값 설정
+          List<String> questions = response['questions']?.cast<String>() ?? [];
+          List<String> contents = response['contents']?.cast<String>() ?? [];
+
+          // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (context) => QuestionListView(
+              questions: questions, // 검증된 questions 리스트
+              contents: contents, // 검증된 contents 리스트
+            ),
+          ));
+        } else {
+          print('Failed to get response from server.');
+        }
       } else {
         print('No image selected.');
       }
@@ -341,18 +352,32 @@ class _CategoryListViewState extends State<CategoryListView> {
     }
   }
 
-  // 파일 선택을 위한 메서드 (모든 파일 형식)
   Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.any, // 모든 파일 형식 허용
+        type: FileType.any,
       );
 
       if (result != null) {
         File file = File(result.files.single.path!);
+        selectedFile = file; // 선택된 파일을 변수에 저장
 
-        // API 요청 전송
-        await _uploadFileToServer(file);
+        // QuestionExtractView로 이동하여 로딩 화면 표시
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const QuestionExtractView(),
+        ));
+
+        // API 요청 전송 및 응답 처리
+        final response = await _uploadFileToServer(file);
+
+        if (response != null) {
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (context) => QuestionListView(
+              questions: response['questions'], // 응답 데이터를 전달
+              contents: response['contents'],
+            ),
+          ));
+        }
       } else {
         print('No file selected.');
       }
@@ -362,41 +387,33 @@ class _CategoryListViewState extends State<CategoryListView> {
     }
   }
 
-// 서버로 이미지를 업로드하는 메서드
-  Future<void> _uploadFileToServer(File file) async {
+  Future<Map<String, dynamic>?> _uploadFileToServer(File file) async {
     final String apiUrl =
         'http://13.124.185.96:8001/api/yolo/yolo'; // API 엔드포인트 주소
 
     try {
       var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
 
-      // 파일을 멀티파트 요청에 추가
       request.files.add(await http.MultipartFile.fromPath(
         'file', // 서버에서 기대하는 파일 필드 이름
         file.path,
       ));
 
       var response = await request.send();
-
-      // 응답 본문을 받아서 JSON 파싱
       var responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        // 서버에서 전송한 JSON을 파싱
-        var jsonResponse = jsonDecode(responseBody);
-        print('File uploaded successfully');
-        print('Server Response: $jsonResponse'); // 서버의 JSON 응답 출력
+        return jsonDecode(responseBody);
       } else {
         print('Failed to upload file: ${response.statusCode}');
-        print('Response: $responseBody'); // 에러 발생 시 서버 응답 출력
+        return null;
       }
     } catch (e) {
       print('An error occurred during the upload: $e');
-      _showErrorDialog(context, 'An error occurred during the upload.');
+      return null;
     }
   }
 
-  // 에러 발생 시 에러 메시지를 표시하는 다이얼로그 메서드
   void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
@@ -440,14 +457,27 @@ class _CategoryListViewState extends State<CategoryListView> {
             ),
           ),
           const Spacer(),
-          // 새 카테고리 추가 버튼
           GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const QuestionListView(),
-                ),
-              );
+            onTap: () async {
+              if (selectedFile != null) {
+                final response = await _uploadFileToServer(selectedFile!);
+
+                if (response != null) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => QuestionListView(
+                        questions: response['questions'],
+                        contents: response['contents'],
+                      ),
+                    ),
+                  );
+                } else {
+                  _showErrorDialog(
+                      context, 'Failed to get response from server.');
+                }
+              } else {
+                _showErrorDialog(context, 'No file selected.');
+              }
             },
             child: const Icon(
               Icons.one_k,

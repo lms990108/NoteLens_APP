@@ -10,24 +10,20 @@ class QuestionExtractView extends StatelessWidget {
       appBar: _myAppBar(context),
       body: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center, // 수평 중앙 정렬
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 가운데 이미지와 로딩 표시
           Center(
-            // Container를 중앙에 위치
             child: SizedBox(
               width: 400,
-              height: 400, // 회색 배경 이미지 자리
+              height: 400,
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.green), // 로딩 색상
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                 ),
               ),
             ),
           ),
-          SizedBox(height: 20), // 이미지와 텍스트 간 간격
-          // 하단 텍스트
+          SizedBox(height: 20),
           Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
