@@ -329,15 +329,20 @@ class _CategoryListViewState extends State<CategoryListView> {
           // 서버 응답 출력
           print("Server Response: $response");
 
-          // 서버 응답의 questions와 contents를 검증하고 기본값 설정
-          List<String> questions = response['questions']?.cast<String>() ?? [];
-          List<String> contents = response['contents']?.cast<String>() ?? [];
+          // 서버 응답에서 파일명(key)과 설명(value)을 각각 questions와 contents에 매핑
+          List<String> questions = [];
+          List<String> contents = [];
+
+          response.forEach((key, value) {
+            questions.add(key); // test_mongo_id.jpg 같은 파일명을 questions에 추가
+            contents.add(value); // 해당 파일명의 설명을 contents에 추가
+          });
 
           // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
           Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (context) => QuestionListView(
-              questions: questions, // 검증된 questions 리스트
-              contents: contents, // 검증된 contents 리스트
+              questions: questions, // 파일명 리스트
+              contents: contents, // 설명 리스트
             ),
           ));
         } else {
@@ -360,7 +365,6 @@ class _CategoryListViewState extends State<CategoryListView> {
 
       if (result != null) {
         File file = File(result.files.single.path!);
-        selectedFile = file; // 선택된 파일을 변수에 저장
 
         // QuestionExtractView로 이동하여 로딩 화면 표시
         Navigator.of(context).push(MaterialPageRoute(
@@ -371,12 +375,27 @@ class _CategoryListViewState extends State<CategoryListView> {
         final response = await _uploadFileToServer(file);
 
         if (response != null) {
+          // 서버 응답 출력
+          print("Server Response: $response");
+
+          // 서버 응답에서 파일명(key)과 설명(value)을 각각 questions와 contents에 매핑
+          List<String> questions = [];
+          List<String> contents = [];
+
+          response.forEach((key, value) {
+            questions.add(key); // 파일명을 questions에 추가
+            contents.add(value); // 설명을 contents에 추가
+          });
+
+          // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
           Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (context) => QuestionListView(
-              questions: response['questions'], // 응답 데이터를 전달
-              contents: response['contents'],
+              questions: questions, // 파일명 리스트
+              contents: contents, // 설명 리스트
             ),
           ));
+        } else {
+          print('Failed to get response from server.');
         }
       } else {
         print('No file selected.');
