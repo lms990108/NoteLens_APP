@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'create_category_view.dart';
 import 'update_category_view.dart';
 import 'how_to_use_view.dart';
+import '../../question/view/question_list_view.dart';
+import '../../question/view/question_extract_view.dart';
 import 'dart:convert'; // JSON 파싱을 위한 라이브러리
 
 // 카테고리 리스트 뷰 위젯
@@ -438,6 +440,33 @@ class _CategoryListViewState extends State<CategoryListView> {
             ),
           ),
           const Spacer(),
+          // 새 카테고리 추가 버튼
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const QuestionListView(),
+                ),
+              );
+            },
+            child: const Icon(
+              Icons.one_k,
+              size: 40,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const QuestionExtractView(),
+                ),
+              );
+            },
+            child: const Icon(
+              Icons.two_k,
+              size: 40,
+            ),
+          ),
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
