@@ -46,14 +46,21 @@
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
 
-    <!-- 파일 및 사진 권한 -->
+    <!-- 사진 권한 -->
     <key>NSPhotoLibraryUsageDescription</key>
     <string>We need access to your photo library to select images.</string>
     <key>NSCameraUsageDescription</key>
     <string>We need access to your camera to take pictures.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>We need access to your microphone to record videos.</string>
-    <!-- 파일 및 사진 권한 -->
+    <!-- 파일 권한 -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to select files.</string>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+    
 
 </dict>
 </plist>
