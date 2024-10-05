@@ -176,7 +176,9 @@ class _QuestionListViewState extends State<QuestionListView> {
       );
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+        final utf8ResponseBody =
+            utf8.decode(response.bodyBytes); // 응답을 UTF-8로 디코딩
+        final responseData = jsonDecode(utf8ResponseBody);
         return responseData['choices'][0]['message']
             ['content']; // GPT의 응답 내용 반환
       } else {
