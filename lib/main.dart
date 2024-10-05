@@ -3,10 +3,12 @@ import 'package:notelens_app/common/utils/database_utils.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
 import 'package:provider/provider.dart';
 import 'loading.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseUtils.initializeDatabase();
+  await dotenv.load(fileName: ".env");
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<CategoryListViewModel>(
         create: (_) => CategoryListViewModel())
