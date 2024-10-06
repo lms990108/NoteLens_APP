@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
 
 class QuestionListView extends StatefulWidget {
   final List<String> questions;
@@ -53,12 +57,42 @@ class _QuestionListViewState extends State<QuestionListView> {
           );
         },
       ),
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text(
-          "질문할 내용을 선택하고, 필요시 수정해 주세요",
-          style: TextStyle(fontSize: 16),
-          textAlign: TextAlign.center,
+      bottomNavigationBar: BottomAppBar(
+        child: ElevatedButton(
+          onPressed: () async {
+            // 선택된 질문과 내용을 필터링
+            List<String> selectedQuestions = [];
+            for (int i = 0; i < _isChecked.length; i++) {
+              if (_isChecked[i]) {
+                selectedQuestions.add(widget.contents[i]);
+              }
+            }
+
+            if (selectedQuestions.isNotEmpty) {
+              // 선택된 질문들을 병렬적으로 ChatGPT API로 전송
+              try {
+                List<String> responses =
+                    await sendQuestionsToChatGpt(selectedQuestions);
+                print('ChatGPT Responses: $responses');
+
+                // 응답과 질문을 함께 QuestionAnswerView로 전달
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuestionAnswerView(
+                      questions: selectedQuestions,
+                      answers: responses,
+                    ),
+                  ),
+                );
+              } catch (error) {
+                print('Error: $error');
+              }
+            } else {
+              print('No questions selected');
+            }
+          },
+          child: const Text('Send Selected Questions to GPT'),
         ),
       ),
     );
@@ -126,5 +160,49 @@ class _QuestionListViewState extends State<QuestionListView> {
         );
       },
     );
+  }
+
+  // ChatGPT API 호출 함수
+  Future<List<String>> sendQuestionsToChatGpt(
+      List<String> selectedQuestions) async {
+    final apiKey = dotenv.env['OPENAI_API_KEY']!; // .env에서 API 키 가져오기
+    final apiUrl =
+        'https://api.openai.com/v1/chat/completions'; // ChatGPT API 엔드포인트
+
+    // 병렬적으로 질문을 ChatGPT API로 전송
+    List<Future<String>> apiRequests =
+        selectedQuestions.map<Future<String>>((String question) async {
+      try {
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $apiKey',
+          },
+          body: jsonEncode({
+            'model': 'gpt-3.5-turbo', // 사용하려는 GPT 모델
+            'messages': [
+              {'role': 'user', 'content': question}
+            ],
+            'max_tokens': 500, // 필요한 토큰 길이
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final utf8ResponseBody =
+              utf8.decode(response.bodyBytes); // 응답을 UTF-8로 디코딩
+          final responseData = jsonDecode(utf8ResponseBody);
+          return responseData['choices'][0]['message']
+              ['content']; // GPT의 응답 내용 반환
+        } else {
+          throw Exception('Failed to get response from ChatGPT API');
+        }
+      } catch (error) {
+        print('Error sending request to ChatGPT API: $error');
+        throw Exception('Error sending request to ChatGPT API');
+      }
+    }).toList();
+
+    return Future.wait(apiRequests); // 병렬로 모든 요청을 수행하고 결과를 반환
   }
 }
