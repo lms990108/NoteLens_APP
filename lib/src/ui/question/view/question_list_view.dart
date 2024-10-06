@@ -60,7 +60,7 @@ class _QuestionListViewState extends State<QuestionListView> {
       bottomNavigationBar: BottomAppBar(
         child: ElevatedButton(
           onPressed: () async {
-            // 선택된 질문만 필터링
+            // 선택된 질문과 내용을 필터링
             List<String> selectedQuestions = [];
             for (int i = 0; i < _isChecked.length; i++) {
               if (_isChecked[i]) {
@@ -75,12 +75,14 @@ class _QuestionListViewState extends State<QuestionListView> {
                     await sendQuestionsToChatGpt(selectedQuestions);
                 print('ChatGPT Responses: $responses');
 
-                // 응답을 QuestionAnswerView로 전달
+                // 응답과 질문을 함께 QuestionAnswerView로 전달
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        QuestionAnswerView(answers: responses),
+                    builder: (context) => QuestionAnswerView(
+                      questions: selectedQuestions,
+                      answers: responses,
+                    ),
                   ),
                 );
               } catch (error) {

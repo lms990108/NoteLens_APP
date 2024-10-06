@@ -3,9 +3,11 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'dart:ui'; // 블러 효과를 위해 필요
 
 class QuestionAnswerView extends StatefulWidget {
-  final List<String> answers;
+  final List<String> questions; // 질문 리스트
+  final List<String> answers; // 답변 리스트
 
-  const QuestionAnswerView({super.key, required this.answers});
+  const QuestionAnswerView(
+      {super.key, required this.questions, required this.answers});
 
   @override
   _QuestionAnswerViewState createState() => _QuestionAnswerViewState();
@@ -54,7 +56,7 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Q$index: 질문에 대한 답변",
+                      "질문: ${widget.questions[index]}", // 질문을 표시
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
