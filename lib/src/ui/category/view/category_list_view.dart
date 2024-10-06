@@ -506,9 +506,12 @@ class _CategoryListViewState extends State<CategoryListView> {
           ),
           GestureDetector(
             onTap: () {
+              // 임시 데이터 생성
+              List<String> tempAnswers = ["임시 답변 1", "임시 답변 2", "임시 답변 3"];
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const QuestionAnswerView(),
+                  builder: (context) =>
+                      QuestionAnswerView(answers: tempAnswers),
                 ),
               );
             },

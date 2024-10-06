@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
 
 class QuestionListView extends StatefulWidget {
   final List<String> questions;
@@ -68,12 +69,20 @@ class _QuestionListViewState extends State<QuestionListView> {
             }
 
             if (selectedQuestions.isNotEmpty) {
-              // 선택된 질문들을 ChatGPT API로 전송
+              // 선택된 질문들을 병렬적으로 ChatGPT API로 전송
               try {
-                String response =
+                List<String> responses =
                     await sendQuestionsToChatGpt(selectedQuestions);
-                print('ChatGPT Response: $response');
-                _showResponseDialog(context, response);
+                print('ChatGPT Responses: $responses');
+
+                // 응답을 QuestionAnswerView로 전달
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        QuestionAnswerView(answers: responses),
+                  ),
+                );
               } catch (error) {
                 print('Error: $error');
               }
@@ -152,62 +161,46 @@ class _QuestionListViewState extends State<QuestionListView> {
   }
 
   // ChatGPT API 호출 함수
-  Future<String> sendQuestionsToChatGpt(List<String> selectedQuestions) async {
+  Future<List<String>> sendQuestionsToChatGpt(
+      List<String> selectedQuestions) async {
     final apiKey = dotenv.env['OPENAI_API_KEY']!; // .env에서 API 키 가져오기
     final apiUrl =
         'https://api.openai.com/v1/chat/completions'; // ChatGPT API 엔드포인트
 
-    final prompt = selectedQuestions.join('\n'); // 질문들을 하나의 프롬프트로 합치기
-
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode({
-          'model': 'gpt-3.5-turbo', // 사용하려는 GPT 모델
-          'messages': [
-            {'role': 'user', 'content': prompt}
-          ],
-          'max_tokens': 500, // 필요한 토큰 길이
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final utf8ResponseBody =
-            utf8.decode(response.bodyBytes); // 응답을 UTF-8로 디코딩
-        final responseData = jsonDecode(utf8ResponseBody);
-        return responseData['choices'][0]['message']
-            ['content']; // GPT의 응답 내용 반환
-      } else {
-        throw Exception('Failed to get response from ChatGPT API');
-      }
-    } catch (error) {
-      print('Error sending request to ChatGPT API: $error');
-      throw Exception('Error sending request to ChatGPT API');
-    }
-  }
-
-  // ChatGPT 응답을 보여주는 다이얼로그
-  void _showResponseDialog(BuildContext context, String response) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('ChatGPT Response'),
-          content: Text(response),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
+    // 병렬적으로 질문을 ChatGPT API로 전송
+    List<Future<String>> apiRequests =
+        selectedQuestions.map<Future<String>>((String question) async {
+      try {
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $apiKey',
+          },
+          body: jsonEncode({
+            'model': 'gpt-3.5-turbo', // 사용하려는 GPT 모델
+            'messages': [
+              {'role': 'user', 'content': question}
+            ],
+            'max_tokens': 500, // 필요한 토큰 길이
+          }),
         );
-      },
-    );
+
+        if (response.statusCode == 200) {
+          final utf8ResponseBody =
+              utf8.decode(response.bodyBytes); // 응답을 UTF-8로 디코딩
+          final responseData = jsonDecode(utf8ResponseBody);
+          return responseData['choices'][0]['message']
+              ['content']; // GPT의 응답 내용 반환
+        } else {
+          throw Exception('Failed to get response from ChatGPT API');
+        }
+      } catch (error) {
+        print('Error sending request to ChatGPT API: $error');
+        throw Exception('Error sending request to ChatGPT API');
+      }
+    }).toList();
+
+    return Future.wait(apiRequests); // 병렬로 모든 요청을 수행하고 결과를 반환
   }
 }
