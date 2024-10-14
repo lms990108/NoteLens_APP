@@ -6,27 +6,25 @@ class CategoryRepository {
 
   /// 새로운 카테고리 생성
   Future<Category> createCategory(Category category) async {
-    final db = await _databaseConfig.database; // 데이터베이스 객체를 가져옵니다.
+    final db = await _databaseConfig.database;
     final id = await db.insert(Category.tableName, category.toMap());
     return category.copyWith(id: id);
   }
 
   /// 카테고리 조회 (ID)
   Future<Category?> getCategoryById(int id) async {
-    final db = await _databaseConfig.database; // 데이터베이스 객체를 가져옵니다.
+    final db = await _databaseConfig.database;
 
-    // 필드 목록을 직접 지정하여 쿼리를 실행합니다.
     final maps = await db.query(
-      Category.tableName, // "category"
+      Category.tableName,
       columns: [
-        // 조회할 열 지정
         CategoryFields.id,
         CategoryFields.title,
         CategoryFields.description,
         CategoryFields.createdAt,
         CategoryFields.deletedAt,
         CategoryFields.isDeleted,
-      ], // 필요한 필드 목록 지정 (입력될 값)
+      ],
       where: '${CategoryFields.id} = ?',
       whereArgs: [id],
     );
@@ -38,17 +36,23 @@ class CategoryRepository {
     }
   }
 
-  /// 카테고리 리스트 조회
+  /// 삭제되지 않은 카테고리만 조회
   Future<List<Category>> getAllCategories() async {
-    final db = await _databaseConfig.database; // 데이터베이스 객체를 가져옵니다.
-    final maps = await db.query(Category.tableName);
+    final db = await _databaseConfig.database;
+
+    // isDeleted가 false(0)인 항목만 가져옴
+    final maps = await db.query(
+      Category.tableName,
+      where: '${CategoryFields.isDeleted} = ?',
+      whereArgs: [0], // 0은 false를 의미
+    );
 
     return maps.map((map) => Category.fromMap(map)).toList();
   }
 
-  /// 기존의 카테고리를 업데이트합니다. 업데이트된 행의 개수를 반환합니다.
+  /// 기존의 카테고리를 업데이트
   Future<int> updateCategory(Category category) async {
-    final db = await _databaseConfig.database; // 데이터베이스 객체를 가져옵니다.
+    final db = await _databaseConfig.database;
     return await db.update(
       Category.tableName,
       category.toMap(),
@@ -57,9 +61,9 @@ class CategoryRepository {
     );
   }
 
-  /// 카테고리 soft Delete
+  /// 카테고리 soft delete
   Future<int> deleteCategory(int id) async {
-    final db = await _databaseConfig.database; // 데이터베이스 객체를 가져옵니다.
+    final db = await _databaseConfig.database;
     final currentDate = DateTime.now();
     return await db.update(
       Category.tableName,
@@ -72,13 +76,14 @@ class CategoryRepository {
     );
   }
 
-  /// 제목을 기준으로 카테고리를 검색하여 일치하는 카테고리 리스트를 반환합니다.
+  /// 제목을 기준으로 카테고리 검색
   Future<List<Category>> getCategoriesByTitle(String title) async {
-    final db = await _databaseConfig.database; // 데이터베이스 객체를 가져옵니다.
+    final db = await _databaseConfig.database;
     final maps = await db.query(
       Category.tableName,
-      where: '${CategoryFields.title} LIKE ?',
-      whereArgs: ['%$title%'],
+      where:
+          '${CategoryFields.title} LIKE ? AND ${CategoryFields.isDeleted} = ?',
+      whereArgs: ['%$title%', 0], // 삭제되지 않은 항목만 검색
     );
 
     return maps.map((map) => Category.fromMap(map)).toList();
