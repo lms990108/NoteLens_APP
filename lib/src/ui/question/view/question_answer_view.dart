@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'dart:ui'; // 블러 효과를 위해 필요
+import 'package:notelens_app/src/data/model/category.dart';
+import 'package:notelens_app/src/data/model/qna.dart';
+import 'package:notelens_app/src/data/repository/category_repository.dart';
+import 'package:notelens_app/src/data/repository/qna_repository.dart';
 
 class QuestionAnswerView extends StatefulWidget {
   final List<String> questions; // 질문 리스트
   final List<String> answers; // 답변 리스트
 
-  const QuestionAnswerView(
-      {super.key, required this.questions, required this.answers});
+  const QuestionAnswerView({
+    super.key,
+    required this.questions,
+    required this.answers,
+  });
 
   @override
   _QuestionAnswerViewState createState() => _QuestionAnswerViewState();
@@ -18,25 +25,74 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
   final PageController pageController =
       PageController(viewportFraction: 1, keepPage: true);
 
-  // 각 페이지에 대한 ScrollController를 생성합니다.
+  final CategoryRepository _categoryRepository = CategoryRepository();
+  final QnARepository _qnaRepository = QnARepository(); // QnA 레포지토리 인스턴스
+
+  List<Category> categories = [];
+  String? selectedCategory;
+  String? memo;
+
   late List<ScrollController> scrollControllers;
 
   @override
   void initState() {
     super.initState();
-    // 각 질문마다 ScrollController를 생성
     scrollControllers =
         List.generate(widget.answers.length, (index) => ScrollController());
+
+    _loadCategories();
   }
 
   @override
   void dispose() {
-    // 생성된 모든 ScrollController를 dispose 합니다.
     for (var controller in scrollControllers) {
       controller.dispose();
     }
     pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final loadedCategories = await _categoryRepository.getAllCategories();
+      print('Loaded Categories: ${loadedCategories.map((e) => e.title)}');
+
+      setState(() {
+        categories = loadedCategories;
+      });
+    } catch (e) {
+      print("Failed to load categories: $e");
+    }
+  }
+
+  void _saveQnA(int index) async {
+    if (selectedCategory == null) {
+      print("카테고리를 선택해주세요.");
+      return;
+    }
+
+    // 선택된 카테고리의 ID 가져오기
+    final category =
+        categories.firstWhere((cat) => cat.title == selectedCategory);
+
+    // QnA 객체 생성
+    final qna = QnA(
+      title: "QnA ${index + 1}",
+      qContent: widget.questions[index],
+      aContent: widget.answers[index],
+      memo: memo,
+      createdAt: DateTime.now(),
+      isDeleted: false,
+      categoryId: category.id!,
+    );
+
+    try {
+      await _qnaRepository.createQnA(qna);
+      print("QnA 저장 성공: ${qna.title}");
+      Navigator.of(context).pop();
+    } catch (e) {
+      print("QnA 저장 실패: $e");
+    }
   }
 
   @override
@@ -50,14 +106,14 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
             flex: 9,
             child: PageView.builder(
               controller: pageController,
-              itemCount: widget.answers.length, // 질문 수만큼 페이지를 생성
+              itemCount: widget.answers.length,
               itemBuilder: (context, index) => Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "질문: ${widget.questions[index]}", // 질문을 표시
+                      "질문: ${widget.questions[index]}",
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -69,14 +125,13 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Scrollbar(
-                          controller: scrollControllers[
-                              index], // 각 페이지마다 ScrollController 사용
+                          controller: scrollControllers[index],
                           thumbVisibility: true,
                           child: ListView(
                             controller: scrollControllers[index],
                             children: [
                               Text(
-                                widget.answers[index], // 질문에 대한 답변 표시
+                                widget.answers[index],
                                 style: const TextStyle(fontSize: 14),
                               ),
                             ],
@@ -93,15 +148,18 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
             padding: const EdgeInsets.all(8.0),
             child: SmoothPageIndicator(
               controller: pageController,
-              count: widget.answers.length, // 질문 수만큼 점 표시
+              count: widget.answers.length,
               effect: const WormEffect(
-                  dotWidth: 25,
-                  dotHeight: 25,
-                  spacing: 8,
-                  activeDotColor: Colors.green),
-              onDotClicked: (index) => pageController.animateToPage(index,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut),
+                dotWidth: 25,
+                dotHeight: 25,
+                spacing: 8,
+                activeDotColor: Colors.green,
+              ),
+              onDotClicked: (index) => pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+              ),
             ),
           ),
         ],
@@ -121,7 +179,7 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
       title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
       actions: [
         InkWell(
-          onTap: _showCategoryDialog, // 저장 버튼 클릭 이벤트를 _showCategoryDialog로 설정
+          onTap: _showCategoryDialog,
           child: Container(
             padding: const EdgeInsets.all(8.0),
             child: const Icon(Icons.save, size: 30, color: Colors.black),
@@ -137,102 +195,119 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
       barrierDismissible: true,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-          return BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: Dialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: SingleChildScrollView(
-                  // 추가: 스크롤 가능하도록 변경
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const Text('카테고리 선택',
+          builder: (BuildContext context, StateSetter setState) {
+            String? newCategoryName;
+            bool isLoading = categories.isEmpty;
+
+            return BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Dialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Text(
+                          '카테고리 선택',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18)),
-                      const SizedBox(height: 20),
-                      ToggleButtons(
-                        isSelected: [isExistingCategory, !isExistingCategory],
-                        onPressed: (index) {
-                          setState(() {
-                            isExistingCategory = index == 0;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('기존 카테고리'),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('새 카테고리'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      isExistingCategory
-                          ? DropdownButtonFormField<String>(
-                              value: null,
-                              onChanged: (String? newValue) {},
-                              items: <String>[
-                                'Category 1',
-                                'Category 2',
-                                'Category 3'
-                              ].map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                              decoration: const InputDecoration(
-                                labelText: '기존 카테고리',
-                                border: OutlineInputBorder(),
-                              ),
-                            )
-                          : const TextField(
-                              decoration: InputDecoration(
-                                labelText: '새 카테고리 이름',
-                                border: OutlineInputBorder(),
-                              ),
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 20),
+                        ToggleButtons(
+                          isSelected: [isExistingCategory, !isExistingCategory],
+                          onPressed: (index) {
+                            setState(() {
+                              isExistingCategory = index == 0;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          children: const [
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Text('기존 카테고리'),
                             ),
-                      const SizedBox(height: 20),
-                      const TextField(
-                        // 질문 이름 입력 칸
-                        decoration: InputDecoration(
-                          labelText: '질문 이름',
-                          border: OutlineInputBorder(),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Text('새 카테고리'),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      const TextField(
-                        // 메모할 내용 입력 칸
-                        maxLines: 3, // 메모 필드를 여러 줄 입력 가능하게 설정
-                        decoration: InputDecoration(
-                          labelText: '메모할 내용',
-                          border: OutlineInputBorder(),
+                        const SizedBox(height: 20),
+                        isExistingCategory
+                            ? isLoading
+                                ? const CircularProgressIndicator()
+                                : DropdownButtonFormField<String>(
+                                    value: selectedCategory,
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        selectedCategory = newValue;
+                                      });
+                                    },
+                                    items: categories.map((category) {
+                                      return DropdownMenuItem<String>(
+                                        value: category.title,
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.folder,
+                                                color: Colors.grey),
+                                            const SizedBox(width: 8),
+                                            Text(category.title),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                    decoration: const InputDecoration(
+                                      labelText: '기존 카테고리',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  )
+                            : Column(
+                                children: [
+                                  TextField(
+                                    onChanged: (value) {
+                                      newCategoryName = value;
+                                    },
+                                    decoration: const InputDecoration(
+                                      labelText: '새 카테고리 이름',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  TextField(
+                                    onChanged: (value) {
+                                      memo = value;
+                                    },
+                                    maxLines: 3,
+                                    decoration: const InputDecoration(
+                                      labelText: '메모할 내용',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: () {
+                            final currentIndex =
+                                pageController.page?.round() ?? 0;
+                            _saveQnA(currentIndex);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          child: const Text('저장'),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(50),
-                        ),
-                        child: const Text('저장'),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
