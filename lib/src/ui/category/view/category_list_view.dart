@@ -5,6 +5,7 @@ import 'package:notelens_app/src/data/model/category.dart';
 import 'package:notelens_app/src/ui/category/view/create_category_view.dart';
 import 'package:notelens_app/src/ui/category/view/how_to_use_view.dart';
 import 'package:notelens_app/src/ui/category/view_model/category_list_view_model.dart';
+import 'package:notelens_app/src/ui/qna/qna_list_view.dart';
 import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
 import 'package:notelens_app/src/ui/question/view/question_list_view.dart';
 import 'package:provider/provider.dart';
@@ -106,6 +107,17 @@ class _CategoryListViewState extends State<CategoryListView> {
                   itemBuilder: (context, index) {
                     final category = activeCategories[index];
                     return GestureDetector(
+                      onTap: () {
+                        // 카테고리 클릭 시 QnA 목록으로 이동
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => QnAListView(
+                              categoryId: category.id!,
+                              categoryTitle: category.title,
+                            ),
+                          ),
+                        );
+                      },
                       onLongPress: () {
                         _showCategoryOptions(context, viewModel, category);
                       },
