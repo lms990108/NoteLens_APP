@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'dart:ui'; // 블러 효과를 위해 필요
 import 'package:notelens_app/src/data/model/category.dart';
+import 'package:notelens_app/src/data/model/qna.dart';
 import 'package:notelens_app/src/data/repository/category_repository.dart';
+import 'package:notelens_app/src/data/repository/qna_repository.dart';
 
 class QuestionAnswerView extends StatefulWidget {
   final List<String> questions; // 질문 리스트
@@ -23,12 +25,13 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
   final PageController pageController =
       PageController(viewportFraction: 1, keepPage: true);
 
-  // 카테고리 저장용 변수
   final CategoryRepository _categoryRepository = CategoryRepository();
-  List<Category> categories = []; // DB에서 가져온 카테고리 리스트
-  String? selectedCategory; // 선택된 카테고리
+  final QnARepository _qnaRepository = QnARepository(); // QnA 레포지토리 인스턴스
 
-  // 각 페이지에 대한 ScrollController를 생성합니다.
+  List<Category> categories = [];
+  String? selectedCategory;
+  String? memo;
+
   late List<ScrollController> scrollControllers;
 
   @override
@@ -37,7 +40,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
     scrollControllers =
         List.generate(widget.answers.length, (index) => ScrollController());
 
-    // 카테고리 로드
     _loadCategories();
   }
 
@@ -53,16 +55,43 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
   Future<void> _loadCategories() async {
     try {
       final loadedCategories = await _categoryRepository.getAllCategories();
-
-      // 데이터 확인용 로그 출력
-      print(
-          'Loaded Categories: ${loadedCategories.map((e) => e.title).toList()}');
+      print('Loaded Categories: ${loadedCategories.map((e) => e.title)}');
 
       setState(() {
         categories = loadedCategories;
       });
     } catch (e) {
       print("Failed to load categories: $e");
+    }
+  }
+
+  void _saveQnA(int index) async {
+    if (selectedCategory == null) {
+      print("카테고리를 선택해주세요.");
+      return;
+    }
+
+    // 선택된 카테고리의 ID 가져오기
+    final category =
+        categories.firstWhere((cat) => cat.title == selectedCategory);
+
+    // QnA 객체 생성
+    final qna = QnA(
+      title: "QnA ${index + 1}",
+      qContent: widget.questions[index],
+      aContent: widget.answers[index],
+      memo: memo,
+      createdAt: DateTime.now(),
+      isDeleted: false,
+      categoryId: category.id!,
+    );
+
+    try {
+      await _qnaRepository.createQnA(qna);
+      print("QnA 저장 성공: ${qna.title}");
+      Navigator.of(context).pop();
+    } catch (e) {
+      print("QnA 저장 실패: $e");
     }
   }
 
@@ -121,13 +150,16 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
               controller: pageController,
               count: widget.answers.length,
               effect: const WormEffect(
-                  dotWidth: 25,
-                  dotHeight: 25,
-                  spacing: 8,
-                  activeDotColor: Colors.green),
-              onDotClicked: (index) => pageController.animateToPage(index,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut),
+                dotWidth: 25,
+                dotHeight: 25,
+                spacing: 8,
+                activeDotColor: Colors.green,
+              ),
+              onDotClicked: (index) => pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+              ),
             ),
           ),
         ],
@@ -232,35 +264,36 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                                       border: OutlineInputBorder(),
                                     ),
                                   )
-                            : TextField(
-                                onChanged: (value) {
-                                  newCategoryName = value;
-                                },
-                                decoration: const InputDecoration(
-                                  labelText: '새 카테고리 이름',
-                                  border: OutlineInputBorder(),
-                                ),
+                            : Column(
+                                children: [
+                                  TextField(
+                                    onChanged: (value) {
+                                      newCategoryName = value;
+                                    },
+                                    decoration: const InputDecoration(
+                                      labelText: '새 카테고리 이름',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  TextField(
+                                    onChanged: (value) {
+                                      memo = value;
+                                    },
+                                    maxLines: 3,
+                                    decoration: const InputDecoration(
+                                      labelText: '메모할 내용',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ],
                               ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () async {
-                            if (!isExistingCategory &&
-                                newCategoryName != null &&
-                                newCategoryName!.isNotEmpty) {
-                              final newCategory = Category(
-                                title: newCategoryName!,
-                                createdAt: DateTime.now(),
-                                isDeleted: false,
-                              );
-                              await _categoryRepository
-                                  .createCategory(newCategory);
-                              await _loadCategories();
-                              setState(() {
-                                selectedCategory = newCategoryName;
-                                isExistingCategory = true;
-                              });
-                            }
-                            Navigator.of(context).pop();
+                          onPressed: () {
+                            final currentIndex =
+                                pageController.page?.round() ?? 0;
+                            _saveQnA(currentIndex);
                           },
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
