@@ -318,7 +318,7 @@ class _CategoryListViewState extends State<CategoryListView> {
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
 
-        // QuestionExtractView로 이동하여 로딩 화면 표시
+        // 로딩 화면으로 이동
         Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => const QuestionExtractView(),
         ));
@@ -327,16 +327,17 @@ class _CategoryListViewState extends State<CategoryListView> {
         final response = await _uploadFileToServer(imageFile);
 
         if (response != null) {
-          // 서버 응답 출력
           print("Server Response: $response");
 
-          // 서버 응답에서 파일명(key)과 설명(value)을 각각 questions와 contents에 매핑
+          // 새로운 응답 포맷에서 데이터를 파싱
+          final data = response['underlined_text'] ?? {};
+
           List<String> questions = [];
           List<String> contents = [];
 
-          response.forEach((key, value) {
-            questions.add(key); // test_mongo_id.jpg 같은 파일명을 questions에 추가
-            contents.add(value); // 해당 파일명의 설명을 contents에 추가
+          data.forEach((key, value) {
+            questions.add(key); // 파일명 추가
+            contents.add(value); // 설명 추가
           });
 
           // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
