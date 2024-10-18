@@ -6,6 +6,8 @@ import 'package:notelens_app/src/data/model/qna.dart';
 import 'package:notelens_app/src/data/repository/category_repository.dart';
 import 'package:notelens_app/src/data/repository/qna_repository.dart';
 
+import '../../category/view/category_list_view.dart';
+
 class QuestionAnswerView extends StatefulWidget {
   final List<String> questions; // 질문 리스트
   final List<String> answers; // 답변 리스트
@@ -176,7 +178,13 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
           Navigator.of(context).pop();
         },
       ),
-      title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
+      title: InkWell(
+          child:
+              Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
+          onTap: () {
+            Navigator.of(context).pushReplacement(MaterialPageRoute(
+                builder: (context) => const CategoryListView()));
+          }),
       actions: [
         InkWell(
           onTap: _showCategoryDialog,

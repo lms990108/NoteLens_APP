@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:notelens_app/src/ui/category/view/category_list_view.dart';
 
 class HowToUseView extends StatelessWidget {
   const HowToUseView({super.key});
@@ -27,7 +28,13 @@ class HowToUseView extends StatelessWidget {
           Navigator.of(context).pop();
         },
       ),
-      title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
+      title: InkWell(
+          child:
+              Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
+          onTap: () {
+            Navigator.of(context).pushReplacement(MaterialPageRoute(
+                builder: (context) => const CategoryListView()));
+          }),
       actions: [
         InkWell(
           child: Container(

@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
 
+import '../../category/view/category_list_view.dart';
+
 class QuestionListView extends StatefulWidget {
   final List<String> questions;
   final List<String> contents;
@@ -110,7 +112,13 @@ class _QuestionListViewState extends State<QuestionListView> {
           Navigator.of(context).pop();
         },
       ),
-      title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
+      title: InkWell(
+          child:
+              Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
+          onTap: () {
+            Navigator.of(context).pushReplacement(MaterialPageRoute(
+                builder: (context) => const CategoryListView()));
+          }),
       actions: [
         InkWell(
           onTap: () {},
