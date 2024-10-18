@@ -87,7 +87,7 @@ class QnAListView extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(8.0),
             child: const Icon(
-              Icons.search,
+              Icons.settings,
               size: 30,
               color: Colors.black,
             ),
