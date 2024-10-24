@@ -14,6 +14,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../question/view/question_extract_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CategoryListView extends StatefulWidget {
   const CategoryListView({super.key});
@@ -228,12 +229,17 @@ class _CategoryListViewState extends State<CategoryListView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Icon(Icons.send, size: 30),
-              SizedBox(width: 8),
-              Text('Report / Feedback'),
-            ],
+          GestureDetector(
+            onTap: () {
+              launchURL();
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.send, size: 30),
+                SizedBox(width: 8),
+                Text('Report / Feedback'),
+              ],
+            ),
           ),
           const SizedBox(height: 15),
           GestureDetector(
@@ -255,6 +261,17 @@ class _CategoryListViewState extends State<CategoryListView> {
         ],
       ),
     );
+  }
+
+  void launchURL() async {
+    const url =
+        'https://docs.google.com/forms/d/e/1FAIpQLScP8rXDoj_nydCOCnIwpL96WtA6N6gjYyaNUx4ANQfhFdjwrw/viewform?usp=sf_link';
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 
   Widget _buildBlurredRightIcons() {
