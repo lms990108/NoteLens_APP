@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:notelens_app/src/ui/category/view/category_list_view.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'dart:ui'; // 블러 효과를 위해 필요
 import 'package:notelens_app/src/data/model/category.dart';
