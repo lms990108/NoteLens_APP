@@ -71,10 +71,20 @@ class _QuestionListViewState extends State<QuestionListView> {
             if (selectedQuestions.isNotEmpty) {
               // 선택된 질문들을 병렬적으로 ChatGPT API로 전송
               try {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  },
+                );
+
                 List<String> responses =
                     await sendQuestionsToChatGpt(selectedQuestions);
                 print('ChatGPT Responses: $responses');
-
+                Navigator.of(context).pop();
                 // 응답과 질문을 함께 QuestionAnswerView로 전달
                 Navigator.push(
                   context,
