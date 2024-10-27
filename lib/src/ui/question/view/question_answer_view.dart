@@ -295,6 +295,10 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                             final currentIndex =
                                 pageController.page?.round() ?? 0;
                             _saveQnA(currentIndex);
+                            Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const CategoryListView()));
                           },
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
