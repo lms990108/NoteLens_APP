@@ -90,7 +90,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
     try {
       await _qnaRepository.createQnA(qna);
       print("QnA 저장 성공: ${qna.title}");
-      Navigator.of(context).pop();
     } catch (e) {
       print("QnA 저장 실패: $e");
     }
@@ -319,10 +318,10 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                             final currentIndex =
                                 pageController.page?.round() ?? 0;
                             _saveQnA(currentIndex);
-                            Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const CategoryListView()));
+
+                            // 홈 화면으로 돌아가는 코드
+                            Navigator.popUntil(
+                                context, (route) => route.isFirst);
                           },
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
