@@ -291,7 +291,31 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                               ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
+                            if (!isExistingCategory &&
+                                (newCategoryName?.isNotEmpty ?? false)) {
+                              // 새 카테고리 생성 로직 추가
+                              final newCategory = Category(
+                                id: null, // ID는 DB에서 자동 생성되도록 null로 설정
+                                title: newCategoryName!,
+                                description: memo,
+                                createdAt: DateTime.now(),
+                                isDeleted: false,
+                              );
+
+                              try {
+                                final savedCategory = await _categoryRepository
+                                    .createCategory(newCategory);
+                                setState(() {
+                                  categories.add(savedCategory);
+                                  selectedCategory = savedCategory.title;
+                                });
+                                print("새 카테고리 저장 성공: ${savedCategory.title}");
+                              } catch (e) {
+                                print("새 카테고리 저장 실패: $e");
+                              }
+                            }
+
                             final currentIndex =
                                 pageController.page?.round() ?? 0;
                             _saveQnA(currentIndex);
