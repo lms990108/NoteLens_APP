@@ -7,9 +7,14 @@ import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
 class QuestionListView extends StatefulWidget {
   final List<String> questions;
   final List<String> contents;
+  final String originalContent; // original_content 필드 추가
 
-  const QuestionListView(
-      {super.key, required this.questions, required this.contents});
+  const QuestionListView({
+    super.key,
+    required this.questions,
+    required this.contents,
+    required this.originalContent, // original_content 생성자로 받기
+  });
 
   @override
   _QuestionListViewState createState() => _QuestionListViewState();
@@ -81,8 +86,8 @@ class _QuestionListViewState extends State<QuestionListView> {
                   },
                 );
 
-                List<String> responses =
-                    await sendQuestionsToChatGpt(selectedQuestions);
+                List<String> responses = await sendQuestionsToChatGpt(
+                    selectedQuestions, widget.originalContent);
                 print('ChatGPT Responses: $responses');
                 Navigator.of(context).pop();
                 // 응답과 질문을 함께 QuestionAnswerView로 전달
@@ -174,12 +179,11 @@ class _QuestionListViewState extends State<QuestionListView> {
 
   // ChatGPT API 호출 함수
   Future<List<String>> sendQuestionsToChatGpt(
-      List<String> selectedQuestions) async {
+      List<String> selectedQuestions, String originalContent) async {
     final apiKey = dotenv.env['OPENAI_API_KEY']!; // .env에서 API 키 가져오기
     final apiUrl =
         'https://api.openai.com/v1/chat/completions'; // ChatGPT API 엔드포인트
 
-    // 병렬적으로 질문을 ChatGPT API로 전송
     List<Future<String>> apiRequests =
         selectedQuestions.map<Future<String>>((String question) async {
       try {
@@ -192,7 +196,10 @@ class _QuestionListViewState extends State<QuestionListView> {
           body: jsonEncode({
             'model': 'gpt-3.5-turbo', // 사용하려는 GPT 모델
             'messages': [
-              {'role': 'user', 'content': question}
+              {
+                'role': 'user',
+                'content': '"$originalContent"의 내용 중에서, "$question" 부분에 대해 설명해줘'
+              } // originalContent와 question을 포함한 질문
             ],
             'max_tokens': 500, // 필요한 토큰 길이
           }),
