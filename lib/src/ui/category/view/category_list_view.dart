@@ -361,6 +361,7 @@ class _CategoryListViewState extends State<CategoryListView> {
             builder: (context) => QuestionListView(
               questions: questions, // 파일명 리스트
               contents: contents, // 설명 리스트
+              originalContent: original_content, // original_content 전달
             ),
           ));
         } else {
@@ -397,10 +398,10 @@ class _CategoryListViewState extends State<CategoryListView> {
           print("Server Response: $response");
 
           // 새로운 응답 포맷에서 데이터를 파싱
-          final orginal_content = response['original_content'] ?? '';
+          final original_content = response['original_content'] ?? '';
           final data = response['underlined_text'] ?? {};
 
-          print("original 여기서 진행: $orginal_content");
+          print("original 여기서 진행: $original_content");
 
           List<String> questions = [];
           List<String> contents = [];
@@ -414,6 +415,7 @@ class _CategoryListViewState extends State<CategoryListView> {
             builder: (context) => QuestionListView(
               questions: questions, // 파일명 리스트
               contents: contents, // 설명 리스트
+              originalContent: original_content, // original_content 전달
             ),
           ));
         } else {
@@ -508,6 +510,7 @@ class _CategoryListViewState extends State<CategoryListView> {
                       builder: (context) => QuestionListView(
                         questions: response['questions'],
                         contents: response['contents'],
+                        originalContent: '',
                       ),
                     ),
                   );
