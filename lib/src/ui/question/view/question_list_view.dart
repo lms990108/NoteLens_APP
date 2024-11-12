@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
+import '../../custom/custom_appbar.dart';
 
 class QuestionListView extends StatefulWidget {
   final List<String> questions;
@@ -32,7 +33,7 @@ class _QuestionListViewState extends State<QuestionListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _myAppBar(context),
+      appBar: const CustomAppBar(),
       backgroundColor: Colors.white,
       body: ListView.builder(
         itemCount: widget.questions.length,
@@ -110,35 +111,6 @@ class _QuestionListViewState extends State<QuestionListView> {
           child: const Text('Send Selected Questions to GPT'),
         ),
       ),
-    );
-  }
-
-  PreferredSizeWidget _myAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: const Color.fromARGB(255, 206, 206, 206),
-      leading: InkWell(
-        child: const Icon(
-          Icons.arrow_back,
-          size: 30,
-        ),
-        onTap: () {
-          Navigator.of(context).pop();
-        },
-      ),
-      title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
-      actions: [
-        InkWell(
-          onTap: () {},
-          child: Container(
-            padding: const EdgeInsets.all(8.0),
-            child: const Icon(
-              Icons.search,
-              size: 30,
-              color: Colors.black,
-            ),
-          ),
-        ),
-      ],
     );
   }
 

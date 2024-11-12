@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:notelens_app/src/data/model/qna.dart';
 import 'package:notelens_app/src/data/repository/qna_repository.dart';
+import 'package:notelens_app/src/ui/qna/qna_view.dart';
 import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
+import '../custom/custom_appbar.dart';
 
 class QnAListView extends StatefulWidget {
   final int categoryId;
@@ -41,7 +43,7 @@ class _QnAListViewState extends State<QnAListView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _myAppBar(context),
+      appBar: const CustomAppBar(),
       body: FutureBuilder<List<QnA>>(
         future: qnaRepository.getQnAsByCategory(widget.categoryId),
         builder: (context, snapshot) {
@@ -66,10 +68,8 @@ class _QnAListViewState extends State<QnAListView> {
                     // QnA 상세 화면으로 이동
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => QuestionAnswerView(
-                          questions: [qna.qContent],
-                          answers: [qna.aContent],
-                        ),
+                        builder: (context) => QnAView(
+                            question: qna.qContent, answer: qna.aContent),
                       ),
                     );
                   },
@@ -105,34 +105,6 @@ class _QnAListViewState extends State<QnAListView> {
           }
         },
       ),
-    );
-  }
-
-  PreferredSizeWidget _myAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: const Color.fromARGB(255, 206, 206, 206),
-      leading: InkWell(
-        child: const Icon(
-          Icons.arrow_back,
-          size: 30,
-        ),
-        onTap: () {
-          Navigator.of(context).pop();
-        },
-      ),
-      title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
-      actions: [
-        InkWell(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0, 0, 10, 0),
-            child: const Icon(
-              Icons.settings,
-              size: 30,
-            ),
-          ),
-          onTap: () {}, // 설정 아이콘 클릭 시 수행할 동작
-        ),
-      ],
     );
   }
 }
