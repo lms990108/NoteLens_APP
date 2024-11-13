@@ -32,7 +32,7 @@ class _CategoryListViewState extends State<CategoryListView> {
             buildBlurredOverlay(viewModel),
           if (viewModel.isLeftBlurred) buildBlurredLeftIcons(context),
           if (viewModel.isRightBlurred)
-            buildBlurredRightIcons(context, viewModel),
+            BlurredRightIcons(viewModel: viewModel), // 수정된 부분
         ],
       ),
       bottomNavigationBar: CustomBottomBar(
