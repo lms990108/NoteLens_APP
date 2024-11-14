@@ -6,6 +6,7 @@ import 'package:notelens_app/src/data/model/category.dart';
 import 'package:notelens_app/src/data/model/qna.dart';
 import 'package:notelens_app/src/data/repository/category_repository.dart';
 import 'package:notelens_app/src/data/repository/qna_repository.dart';
+import '../../custom/custom_appbar.dart';
 
 class QuestionAnswerView extends StatefulWidget {
   final List<String> questions; // 질문 리스트
@@ -99,7 +100,7 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _myAppBar(context),
+      appBar: const CustomAppBar(),
       body: Column(
         children: [
           Expanded(
@@ -164,28 +165,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
           ),
         ],
       ),
-    );
-  }
-
-  PreferredSizeWidget _myAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: const Color.fromARGB(255, 206, 206, 206),
-      leading: InkWell(
-        child: const Icon(Icons.arrow_back, size: 30),
-        onTap: () {
-          Navigator.of(context).pop();
-        },
-      ),
-      title: Image.asset('assets/images/NoteLens.png', width: 40, height: 40),
-      actions: [
-        InkWell(
-          onTap: _showCategoryDialog,
-          child: Container(
-            padding: const EdgeInsets.all(8.0),
-            child: const Icon(Icons.save, size: 30, color: Colors.black),
-          ),
-        ),
-      ],
     );
   }
 
