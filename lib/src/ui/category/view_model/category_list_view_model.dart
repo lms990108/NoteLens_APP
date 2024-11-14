@@ -43,7 +43,18 @@ class CategoryListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 파일 서버 업로드
+  // 다중 파일 업로드 메서드 추가
+  Future<List<Map<String, dynamic>?>> uploadMultipleFilesToServer(
+      List<File> files) async {
+    List<Map<String, dynamic>?> responses = [];
+    for (var file in files) {
+      final response = await uploadFileToServer(file);
+      responses.add(response);
+    }
+    return responses;
+  }
+
+  // 개별 파일 서버 업로드
   Future<Map<String, dynamic>?> uploadFileToServer(File file) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse(apiUrl));

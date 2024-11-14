@@ -17,10 +17,63 @@ class BlurredRightIcons extends StatefulWidget {
 }
 
 class _BlurredRightIconsState extends State<BlurredRightIcons> {
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickMultipleImages() async {
+    try {
+      // 여러 이미지 선택
+      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        List<File> imageFiles =
+            pickedFiles.map((xfile) => File(xfile.path)).toList();
+
+        // 로딩 화면으로 이동
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const QuestionExtractView(),
+        ));
+
+        // API 요청 전송 및 응답 처리
+        final responses =
+            await widget.viewModel.uploadMultipleFilesToServer(imageFiles);
+
+        List<String> allQuestions = [];
+        List<String> allContents = [];
+        String originalContent = '';
+
+        for (var response in responses) {
+          if (response != null) {
+            originalContent = response['original_content'] ?? '';
+            final data = response['underlined_text'] ?? {};
+
+            data.forEach((key, value) {
+              allQuestions.add(key);
+              allContents.add(value);
+            });
+          } else {
+            _showErrorDialog(
+                'Failed to get response from server for one of the files.');
+          }
+        }
+
+        // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => QuestionListView(
+            questions: allQuestions,
+            contents: allContents,
+            originalContent: originalContent,
+          ),
+        ));
+      } else {
+        _showErrorDialog('No images selected.');
+      }
+    } catch (e) {
+      _showErrorDialog('An error occurred while picking images.');
+    }
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: source);
+      final pickedFile = await _picker.pickImage(source: source);
 
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
@@ -118,7 +171,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
   }
 
   void _showErrorDialog(String message) {
-    if (!mounted) return; // 위젯이 dispose된 경우 반환
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -160,7 +213,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
               title: const Text('이미지 선택하기'),
               onTap: () {
                 Navigator.of(context).pop();
-                _pickImage(ImageSource.gallery);
+                _pickMultipleImages(); // 다중 이미지 선택 기능 사용
               },
             ),
           ],
