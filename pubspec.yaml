@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.0.0
-  image_picker: ^0.8.7+4
+  image_picker: any
   file_picker: ^5.0.1
   http: ^0.13.3
   flutter_dotenv: ^5.0.2
