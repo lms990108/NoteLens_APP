@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:notelens_app/src/ui/qna/multi_file_question_list_view.dart';
 import 'package:provider/provider.dart';
 import '../view_model/category_list_view_model.dart';
 import '../../question/view/question_extract_view.dart';
@@ -21,33 +22,34 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
 
   Future<void> _pickMultipleImages() async {
     try {
-      // 여러 이미지 선택
       final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+
       if (pickedFiles != null && pickedFiles.isNotEmpty) {
         List<File> imageFiles =
             pickedFiles.map((xfile) => File(xfile.path)).toList();
 
-        // 로딩 화면으로 이동
         Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => const QuestionExtractView(),
         ));
 
-        // API 요청 전송 및 응답 처리
-        final responses =
-            await widget.viewModel.uploadMultipleFilesToServer(imageFiles);
+        // 여러 파일의 응답을 저장할 리스트
+        List<Map<String, dynamic>> allFileResponses = [];
 
-        List<String> allQuestions = [];
-        List<String> allContents = [];
-        String originalContent = '';
+        // 각 파일에 대해 서버 요청
+        for (var file in imageFiles) {
+          final response = await widget.viewModel.uploadFileToServer(file);
 
-        for (var response in responses) {
           if (response != null) {
-            originalContent = response['original_content'] ?? '';
-            final data = response['underlined_text'] ?? {};
+            final questions =
+                List<String>.from(response['underlined_text']?.keys ?? []);
+            final contents =
+                List<String>.from(response['underlined_text']?.values ?? []);
+            final originalContent = response['original_content'] ?? '';
 
-            data.forEach((key, value) {
-              allQuestions.add(key);
-              allContents.add(value);
+            allFileResponses.add({
+              "questions": questions,
+              "contents": contents,
+              "originalContent": originalContent,
             });
           } else {
             _showErrorDialog(
@@ -55,12 +57,10 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
           }
         }
 
-        // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
+        // 파일별 데이터를 QuestionListView에 전달
         Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => QuestionListView(
-            questions: allQuestions,
-            contents: allContents,
-            originalContent: originalContent,
+          builder: (context) => MultiFileQuestionListView(
+            fileResponses: allFileResponses,
           ),
         ));
       } else {
