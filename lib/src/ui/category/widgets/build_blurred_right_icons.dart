@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../view_model/category_list_view_model.dart';
 import '../../question/view/question_extract_view.dart';
 import '../../question/view/question_list_view.dart';
@@ -9,8 +10,7 @@ import '../../question/view/question_list_view.dart';
 class BlurredRightIcons extends StatefulWidget {
   final CategoryListViewModel viewModel;
 
-  const BlurredRightIcons({Key? key, required this.viewModel})
-      : super(key: key);
+  const BlurredRightIcons({super.key, required this.viewModel});
 
   @override
   _BlurredRightIconsState createState() => _BlurredRightIconsState();
@@ -141,7 +141,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
     );
   }
 
-  void _showFileOrImagePicker() {
+  void _showFileOrImagePicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -171,6 +171,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = Provider.of<CategoryListViewModel>(context);
     return Positioned(
       bottom: 15,
       right: 15,
@@ -178,7 +179,9 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           GestureDetector(
-            onTap: _showFileOrImagePicker,
+            onTap: () {
+              _showFileOrImagePicker(context);
+            },
             child: const Row(
               children: [
                 Text('Select file'),

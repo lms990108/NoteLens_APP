@@ -30,7 +30,8 @@ class _CategoryListViewState extends State<CategoryListView> {
           buildCategoryList(context, viewModel),
           if (viewModel.isLeftBlurred || viewModel.isRightBlurred)
             buildBlurredOverlay(viewModel),
-          if (viewModel.isLeftBlurred) buildBlurredLeftIcons(context),
+          if (viewModel.isLeftBlurred)
+            buildBlurredLeftIcons(context, viewModel),
           if (viewModel.isRightBlurred)
             BlurredRightIcons(viewModel: viewModel), // 수정된 부분
         ],

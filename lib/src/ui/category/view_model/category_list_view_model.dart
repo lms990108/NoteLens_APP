@@ -11,6 +11,9 @@ class CategoryListViewModel extends ChangeNotifier {
   bool get isLeftBlurred => _isLeftBlurred;
   bool get isRightBlurred => _isRightBlurred;
 
+  bool _isGrid = true;
+  bool get isGrid => _isGrid;
+
   File? selectedFile;
   File? get file => selectedFile;
   static const String apiUrl =
@@ -34,6 +37,11 @@ class CategoryListViewModel extends ChangeNotifier {
   void resetBlur() {
     _isLeftBlurred = false;
     _isRightBlurred = false;
+    notifyListeners();
+  }
+
+  void setGrid(bool grid) {
+    _isGrid = grid;
     notifyListeners();
   }
 
