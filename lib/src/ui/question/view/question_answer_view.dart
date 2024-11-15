@@ -100,7 +100,16 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const CustomAppBar(),
+      appBar: CustomAppBar(
+        actions: [
+          InkWell(
+            onTap: _showCategoryDialog,
+            child: Container(
+                padding: const EdgeInsets.all(8),
+                child: const Icon(Icons.save, size: 30, color: Colors.black)),
+          )
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -299,8 +308,10 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                             _saveQnA(currentIndex);
 
                             // 홈 화면으로 돌아가는 코드
-                            Navigator.popUntil(
-                                context, (route) => route.isFirst);
+                            Navigator.of(context)
+                                .pushReplacement(MaterialPageRoute(
+                              builder: (context) => const CategoryListView(),
+                            ));
                           },
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),

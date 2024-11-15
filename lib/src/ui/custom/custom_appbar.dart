@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../category/view/category_list_view.dart';
+import '../category/view_model/category_list_view_model.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color backgroundColor;
@@ -33,12 +35,47 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               Navigator.of(context).pop();
             },
           ),
-      actions: [
-        InkWell(
-            child: Container(
-                margin: const EdgeInsets.fromLTRB(0, 0, 10, 0),
-                child: const Icon(Icons.settings, size: 30)))
-      ],
+      actions: actions ??
+          [
+            InkWell(
+              child: Container(
+                  margin: const EdgeInsets.fromLTRB(0, 0, 10, 0),
+                  child: const Icon(Icons.settings, size: 30)),
+              onTap: () {
+                _showViewOptionDialog(context);
+              },
+            )
+          ],
+    );
+  }
+
+  void _showViewOptionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('보기 방식 선택'),
+          content: const Text('리스트 또는 그리드 보기 방식을 선택하세요.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('리스트 보기'),
+              onPressed: () {
+                Provider.of<CategoryListViewModel>(context, listen: false)
+                    .setGrid(false);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('그리드 보기'),
+              onPressed: () {
+                Provider.of<CategoryListViewModel>(context, listen: false)
+                    .setGrid(true);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
