@@ -15,6 +15,17 @@ class MultiFileQuestionListView extends StatefulWidget {
 
 class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
   final PageController _pageController = PageController();
+  late List<List<bool>> _isChecked; // 각 파일의 체크 상태를 저장할 리스트
+
+  @override
+  void initState() {
+    super.initState();
+    // 각 파일의 질문 개수에 맞게 체크박스 상태 초기화
+    _isChecked = widget.fileResponses
+        .map((fileData) =>
+            List<bool>.filled(fileData["questions"].length, false))
+        .toList();
+  }
 
   @override
   void dispose() {
@@ -37,6 +48,12 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
                 questions: List<String>.from(fileData["questions"]),
                 contents: List<String>.from(fileData["contents"]),
                 originalContent: fileData["originalContent"] as String,
+                isChecked: _isChecked[index], // 현재 페이지의 체크 상태 전달
+                onCheckChanged: (questionIndex, value) {
+                  setState(() {
+                    _isChecked[index][questionIndex] = value; // 체크 상태 업데이트
+                  });
+                },
               );
             },
           ),

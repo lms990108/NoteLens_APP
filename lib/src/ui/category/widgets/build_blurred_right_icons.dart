@@ -3,10 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notelens_app/src/ui/qna/multi_file_question_list_view.dart';
-import 'package:provider/provider.dart';
 import '../view_model/category_list_view_model.dart';
 import '../../question/view/question_extract_view.dart';
-import '../../question/view/question_list_view.dart';
 
 class BlurredRightIcons extends StatefulWidget {
   final CategoryListViewModel viewModel;
@@ -50,6 +48,8 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
               "questions": questions,
               "contents": contents,
               "originalContent": originalContent,
+              "isChecked":
+                  List<bool>.filled(questions.length, false), // 초기 체크 상태
             });
           } else {
             _showErrorDialog(
@@ -57,7 +57,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
           }
         }
 
-        // 파일별 데이터를 QuestionListView에 전달
+        // 파일별 데이터를 MultiFileQuestionListView에 전달
         Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (context) => MultiFileQuestionListView(
             fileResponses: allFileResponses,
@@ -87,35 +87,31 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
         final response = await widget.viewModel.uploadFileToServer(imageFile);
 
         if (response != null) {
+          final questions =
+              List<String>.from(response['underlined_text']?.keys ?? []);
+          final contents =
+              List<String>.from(response['underlined_text']?.values ?? []);
           final originalContent = response['original_content'] ?? '';
-          final data = response['underlined_text'] ?? {};
 
-          List<String> questions = [];
-          List<String> contents = [];
-
-          data.forEach((key, value) {
-            questions.add(key);
-            contents.add(value);
-          });
-
-          // 응답을 받은 후 QuestionListView로 이동하며 데이터 전달
           Navigator.of(context).pushReplacement(MaterialPageRoute(
-            builder: (context) => QuestionListView(
-              questions: questions,
-              contents: contents,
-              originalContent: originalContent,
+            builder: (context) => MultiFileQuestionListView(
+              fileResponses: [
+                {
+                  "questions": questions,
+                  "contents": contents,
+                  "originalContent": originalContent,
+                  "isChecked": List<bool>.filled(questions.length, false),
+                }
+              ],
             ),
           ));
         } else {
-          print('Failed to get response from server.');
           _showErrorDialog('Failed to get response from server.');
         }
       } else {
-        print('No image selected.');
         _showErrorDialog('No image selected.');
       }
     } catch (e) {
-      print('An error occurred while picking an image: $e');
       _showErrorDialog('An error occurred while picking an image.');
     }
   }
@@ -138,34 +134,31 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
         final response = await widget.viewModel.uploadFileToServer(file);
 
         if (response != null) {
+          final questions =
+              List<String>.from(response['underlined_text']?.keys ?? []);
+          final contents =
+              List<String>.from(response['underlined_text']?.values ?? []);
           final originalContent = response['original_content'] ?? '';
-          final data = response['underlined_text'] ?? {};
-
-          List<String> questions = [];
-          List<String> contents = [];
-
-          data.forEach((key, value) {
-            questions.add(key);
-            contents.add(value);
-          });
 
           Navigator.of(context).pushReplacement(MaterialPageRoute(
-            builder: (context) => QuestionListView(
-              questions: questions,
-              contents: contents,
-              originalContent: originalContent,
+            builder: (context) => MultiFileQuestionListView(
+              fileResponses: [
+                {
+                  "questions": questions,
+                  "contents": contents,
+                  "originalContent": originalContent,
+                  "isChecked": List<bool>.filled(questions.length, false),
+                }
+              ],
             ),
           ));
         } else {
-          print('Failed to get response from server.');
           _showErrorDialog('Failed to get response from server.');
         }
       } else {
-        print('No file selected.');
         _showErrorDialog('No file selected.');
       }
     } catch (e) {
-      print('An error occurred while picking a file: $e');
       _showErrorDialog('An error occurred while picking a file.');
     }
   }
@@ -224,7 +217,6 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<CategoryListViewModel>(context);
     return Positioned(
       bottom: 15,
       right: 15,

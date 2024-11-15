@@ -8,13 +8,17 @@ import '../../custom/custom_appbar.dart';
 class QuestionListView extends StatefulWidget {
   final List<String> questions;
   final List<String> contents;
-  final String originalContent; // original_content 필드 추가
+  final String originalContent;
+  final List<bool> isChecked; // 체크 상태 리스트 추가
+  final Function(int, bool) onCheckChanged; // 체크 상태 변경 시 콜백 추가
 
   const QuestionListView({
     super.key,
     required this.questions,
     required this.contents,
-    required this.originalContent, // original_content 생성자로 받기
+    required this.originalContent,
+    required this.isChecked, // 체크 상태 리스트 받기
+    required this.onCheckChanged, // 체크 상태 변경 콜백 받기
   });
 
   @override
@@ -22,14 +26,6 @@ class QuestionListView extends StatefulWidget {
 }
 
 class _QuestionListViewState extends State<QuestionListView> {
-  late List<bool> _isChecked;
-
-  @override
-  void initState() {
-    super.initState();
-    _isChecked = List<bool>.filled(widget.questions.length, false);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,15 +37,14 @@ class _QuestionListViewState extends State<QuestionListView> {
           return ListTile(
             leading: IconButton(
               icon: Icon(
-                _isChecked[index]
+                widget.isChecked[index]
                     ? Icons.check_circle
                     : Icons.radio_button_unchecked,
-                color: _isChecked[index] ? Colors.green : Colors.grey,
+                color: widget.isChecked[index] ? Colors.green : Colors.grey,
               ),
               onPressed: () {
-                setState(() {
-                  _isChecked[index] = !_isChecked[index];
-                });
+                widget.onCheckChanged(
+                    index, !widget.isChecked[index]); // 체크 상태 변경 시 콜백 호출
               },
             ),
             title: Text(widget.questions[index]),
@@ -66,16 +61,14 @@ class _QuestionListViewState extends State<QuestionListView> {
       bottomNavigationBar: BottomAppBar(
         child: ElevatedButton(
           onPressed: () async {
-            // 선택된 질문과 내용을 필터링
             List<String> selectedQuestions = [];
-            for (int i = 0; i < _isChecked.length; i++) {
-              if (_isChecked[i]) {
+            for (int i = 0; i < widget.isChecked.length; i++) {
+              if (widget.isChecked[i]) {
                 selectedQuestions.add(widget.contents[i]);
               }
             }
 
             if (selectedQuestions.isNotEmpty) {
-              // 선택된 질문들을 병렬적으로 ChatGPT API로 전송
               try {
                 showDialog(
                   context: context,
@@ -91,7 +84,6 @@ class _QuestionListViewState extends State<QuestionListView> {
                     selectedQuestions, widget.originalContent);
                 print('ChatGPT Responses: $responses');
                 Navigator.of(context).pop();
-                // 응답과 질문을 함께 QuestionAnswerView로 전달
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -149,12 +141,10 @@ class _QuestionListViewState extends State<QuestionListView> {
     );
   }
 
-  // ChatGPT API 호출 함수
   Future<List<String>> sendQuestionsToChatGpt(
       List<String> selectedQuestions, String originalContent) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY']!; // .env에서 API 키 가져오기
-    final apiUrl =
-        'https://api.openai.com/v1/chat/completions'; // ChatGPT API 엔드포인트
+    final apiKey = dotenv.env['OPENAI_API_KEY']!;
+    final apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     List<Future<String>> apiRequests =
         selectedQuestions.map<Future<String>>((String question) async {
@@ -166,23 +156,21 @@ class _QuestionListViewState extends State<QuestionListView> {
             'Authorization': 'Bearer $apiKey',
           },
           body: jsonEncode({
-            'model': 'gpt-3.5-turbo', // 사용하려는 GPT 모델
+            'model': 'gpt-3.5-turbo',
             'messages': [
               {
                 'role': 'user',
                 'content': '"$originalContent"의 내용 중에서, "$question" 부분에 대해 설명해줘'
-              } // originalContent와 question을 포함한 질문
+              }
             ],
-            'max_tokens': 500, // 필요한 토큰 길이
+            'max_tokens': 500,
           }),
         );
 
         if (response.statusCode == 200) {
-          final utf8ResponseBody =
-              utf8.decode(response.bodyBytes); // 응답을 UTF-8로 디코딩
+          final utf8ResponseBody = utf8.decode(response.bodyBytes);
           final responseData = jsonDecode(utf8ResponseBody);
-          return responseData['choices'][0]['message']
-              ['content']; // GPT의 응답 내용 반환
+          return responseData['choices'][0]['message']['content'];
         } else {
           throw Exception('Failed to get response from ChatGPT API');
         }
@@ -192,6 +180,6 @@ class _QuestionListViewState extends State<QuestionListView> {
       }
     }).toList();
 
-    return Future.wait(apiRequests); // 병렬로 모든 요청을 수행하고 결과를 반환
+    return Future.wait(apiRequests);
   }
 }
