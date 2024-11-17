@@ -116,6 +116,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
     }
   }
 
+  // TODO: 파일 확장자 변경작업 해야함
   Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
