@@ -67,6 +67,45 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
     }
   }
 
+  void _showSaveOptionsDialog(BuildContext context, int currentIndex) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('저장 옵션'),
+          content: const Text('저장 후 계속할지, 메인으로 돌아갈지 선택하세요.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context); // 다이얼로그 닫기
+              },
+              child: const Text('저장 취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                _saveQnA(currentIndex);
+                Navigator.pop(context);
+                Navigator.pop(context); // 다이얼로그 닫기
+              },
+              child: const Text('계속 저장하기'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _saveQnA(currentIndex);
+                Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (context) => const CategoryListView(),
+                ));
+              },
+              child: const Text('저장하고 나가기'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _saveQnA(int index) async {
     if (selectedCategory == null) {
       print("카테고리를 선택해주세요.");
@@ -188,142 +227,143 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
             bool isLoading = categories.isEmpty;
 
             return BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Dialog(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Text(
-                          '카테고리 선택',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        const SizedBox(height: 20),
-                        ToggleButtons(
-                          isSelected: [isExistingCategory, !isExistingCategory],
-                          onPressed: (index) {
-                            setState(() {
-                              isExistingCategory = index == 0;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          children: const [
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Text('기존 카테고리'),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Text('새 카테고리'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        isExistingCategory
-                            ? isLoading
-                                ? const CircularProgressIndicator()
-                                : DropdownButtonFormField<String>(
-                                    value: selectedCategory,
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        selectedCategory = newValue;
-                                      });
-                                    },
-                                    items: categories.map((category) {
-                                      return DropdownMenuItem<String>(
-                                        value: category.title,
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.folder,
-                                                color: Colors.grey),
-                                            const SizedBox(width: 8),
-                                            Text(category.title),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                    decoration: const InputDecoration(
-                                      labelText: '기존 카테고리',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  )
-                            : Column(
-                                children: [
-                                  TextField(
-                                    onChanged: (value) {
-                                      newCategoryName = value;
-                                    },
-                                    decoration: const InputDecoration(
-                                      labelText: '새 카테고리 이름',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  TextField(
-                                    onChanged: (value) {
-                                      memo = value;
-                                    },
-                                    maxLines: 3,
-                                    decoration: const InputDecoration(
-                                      labelText: '메모할 내용',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (!isExistingCategory &&
-                                (newCategoryName?.isNotEmpty ?? false)) {
-                              // 새 카테고리 생성 로직 추가
-                              final newCategory = Category(
-                                id: null, // ID는 DB에서 자동 생성되도록 null로 설정
-                                title: newCategoryName!,
-                                description: memo,
-                                createdAt: DateTime.now(),
-                                isDeleted: false,
-                              );
-
-                              try {
-                                final savedCategory = await _categoryRepository
-                                    .createCategory(newCategory);
-                                setState(() {
-                                  categories.add(savedCategory);
-                                  selectedCategory = savedCategory.title;
-                                });
-                                print("새 카테고리 저장 성공: ${savedCategory.title}");
-                              } catch (e) {
-                                print("새 카테고리 저장 실패: $e");
-                              }
-                            }
-
-                            final currentIndex =
-                                pageController.page?.round() ?? 0;
-                            _saveQnA(currentIndex);
-
-                            // 홈 화면으로 돌아가는 코드
-                            Navigator.of(context)
-                                .pushReplacement(MaterialPageRoute(
-                              builder: (context) => const CategoryListView(),
-                            ));
-                          },
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Dialog(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SingleChildScrollView(
+                          child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Text(
+                            '카테고리 선택',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18),
                           ),
-                          child: const Text('저장'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
+                          const SizedBox(height: 20),
+                          ToggleButtons(
+                            isSelected: [
+                              isExistingCategory,
+                              !isExistingCategory
+                            ],
+                            onPressed: (index) {
+                              setState(() {
+                                isExistingCategory = index == 0;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            children: const [
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('기존 카테고리'),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('새 카테고리'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          isExistingCategory
+                              ? isLoading
+                                  ? const CircularProgressIndicator()
+                                  : DropdownButtonFormField<String>(
+                                      value: selectedCategory,
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          selectedCategory = newValue;
+                                        });
+                                      },
+                                      items: categories.map((category) {
+                                        return DropdownMenuItem<String>(
+                                          value: category.title,
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.folder,
+                                                  color: Colors.grey),
+                                              const SizedBox(width: 8),
+                                              Text(category.title),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                      decoration: const InputDecoration(
+                                        labelText: '기존 카테고리',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    )
+                              : Column(
+                                  children: [
+                                    TextField(
+                                      onChanged: (value) {
+                                        newCategoryName = value;
+                                      },
+                                      decoration: const InputDecoration(
+                                        labelText: '새 카테고리 이름',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    TextField(
+                                      onChanged: (value) {
+                                        memo = value;
+                                      },
+                                      maxLines: 3,
+                                      decoration: const InputDecoration(
+                                        labelText: '메모할 내용',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (!isExistingCategory &&
+                                  (newCategoryName?.isNotEmpty ?? false)) {
+                                // 새 카테고리 생성 로직 추가
+                                final newCategory = Category(
+                                  id: null, // ID는 DB에서 자동 생성되도록 null로 설정
+                                  title: newCategoryName!,
+                                  description: memo,
+                                  createdAt: DateTime.now(),
+                                  isDeleted: false,
+                                );
+
+                                try {
+                                  final savedCategory =
+                                      await _categoryRepository
+                                          .createCategory(newCategory);
+                                  setState(() {
+                                    categories.add(savedCategory);
+                                    selectedCategory = savedCategory.title;
+                                  });
+                                  print("새 카테고리 저장 성공: ${savedCategory.title}");
+                                } catch (e) {
+                                  print("새 카테고리 저장 실패: $e");
+                                }
+                              }
+
+                              final currentIndex =
+                                  pageController.page?.round() ?? 0;
+                              _showSaveOptionsDialog(context, currentIndex);
+
+                              // 홈 화면으로 돌아가는 코드
+                              /*Navigator.of(context)
+                                  .pushReplacement(MaterialPageRoute(
+                                builder: (context) => const CategoryListView(),
+                              ));*/
+                            },
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(50),
+                            ),
+                            child: const Text('저장'),
+                          ),
+                        ],
+                      )),
+                    )));
           },
         );
       },
