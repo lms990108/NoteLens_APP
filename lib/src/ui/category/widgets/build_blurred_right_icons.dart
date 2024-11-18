@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notelens_app/src/ui/qna/multi_file_question_list_view.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf_render/pdf_render.dart';
 import '../view_model/category_list_view_model.dart';
 import '../../question/view/question_extract_view.dart';
 
@@ -119,48 +122,148 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
   Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'], // 허용 확장자
+        allowMultiple: true, // 다중 파일 선택 허용
       );
 
-      if (result != null) {
-        File file = File(result.files.single.path!);
+      if (result != null && result.files.isNotEmpty) {
+        // 선택한 파일 리스트 생성
+        List<File> files = result.paths.map((path) => File(path!)).toList();
 
         // 로딩 화면으로 이동
         Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => const QuestionExtractView(),
         ));
 
-        // API 요청 전송 및 응답 처리
-        final response = await widget.viewModel.uploadFileToServer(file);
+        // 각 파일을 병렬로 처리
+        List<Map<String, dynamic>> allFileResponses = [];
 
-        if (response != null) {
-          final questions =
-              List<String>.from(response['underlined_text']?.keys ?? []);
-          final contents =
-              List<String>.from(response['underlined_text']?.values ?? []);
-          final originalContent = response['original_content'] ?? '';
+        await Future.wait(files.map((file) async {
+          final extension = file.path.split('.').last.toLowerCase();
+          List<File> processedImages = [];
 
-          Navigator.of(context).pushReplacement(MaterialPageRoute(
-            builder: (context) => MultiFileQuestionListView(
-              fileResponses: [
-                {
+          if (extension == 'pdf') {
+            // PDF를 이미지로 변환
+            processedImages = await _convertPdfToImages(file);
+          } else if (['jpg', 'jpeg', 'png'].contains(extension)) {
+            // 이미지는 그대로 처리
+            processedImages = [file];
+          }
+
+          if (processedImages.isNotEmpty) {
+            // 변환된 각 이미지 파일을 처리
+            for (var imageFile in processedImages) {
+              final response =
+                  await widget.viewModel.uploadFileToServer(imageFile);
+
+              if (response != null) {
+                final questions =
+                    List<String>.from(response['underlined_text']?.keys ?? []);
+                final contents = List<String>.from(
+                    response['underlined_text']?.values ?? []);
+                final originalContent = response['original_content'] ?? '';
+
+                allFileResponses.add({
                   "questions": questions,
                   "contents": contents,
                   "originalContent": originalContent,
                   "isChecked": List<bool>.filled(questions.length, false),
-                }
-              ],
+                });
+              } else {
+                _showErrorDialog(
+                    'Failed to get response from server for one of the files.');
+              }
+            }
+          }
+        }));
+
+        if (allFileResponses.isNotEmpty) {
+          // 파일별 데이터를 MultiFileQuestionListView에 전달
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (context) => MultiFileQuestionListView(
+              fileResponses: allFileResponses,
             ),
           ));
         } else {
-          _showErrorDialog('Failed to get response from server.');
+          _showErrorDialog('No valid files were processed.');
         }
       } else {
-        _showErrorDialog('No file selected.');
+        _showErrorDialog('No files selected.');
       }
     } catch (e) {
-      _showErrorDialog('An error occurred while picking a file.');
+      _showErrorDialog('An error occurred while picking files: $e');
     }
+  }
+
+  Future<List<File>> _convertPdfToImages(File pdfFile) async {
+    try {
+      final document = await PdfDocument.openFile(pdfFile.path);
+      List<File> imageFiles = [];
+
+      for (int i = 1; i <= document.pageCount; i++) {
+        final page = await document.getPage(i);
+        final image = await page.render(
+          width: 1080, // 원하는 해상도
+          height: 1920,
+        );
+
+        if (image != null) {
+          final imageData =
+              await image.createImageIfNotAvailable(); // 이미지 데이터를 생성
+          final byteData = await imageData.toByteData(
+              format: ImageByteFormat.png); // PNG 포맷으로 변환
+          if (byteData != null) {
+            final tempDir = await getTemporaryDirectory();
+            final imagePath = '${tempDir.path}/page_$i.png';
+            final imageFile = File(imagePath)
+              ..writeAsBytesSync(byteData.buffer.asUint8List());
+            imageFiles.add(imageFile);
+          }
+        }
+      }
+
+      return imageFiles;
+    } catch (e) {
+      _showErrorDialog('Failed to convert PDF to images: $e');
+      return [];
+    }
+  }
+
+  void _handleConvertedImages(List<File> imageFiles) async {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => const QuestionExtractView(),
+    ));
+
+    List<Map<String, dynamic>> allFileResponses = [];
+
+    for (var file in imageFiles) {
+      final response = await widget.viewModel.uploadFileToServer(file);
+
+      if (response != null) {
+        final questions =
+            List<String>.from(response['underlined_text']?.keys ?? []);
+        final contents =
+            List<String>.from(response['underlined_text']?.values ?? []);
+        final originalContent = response['original_content'] ?? '';
+
+        allFileResponses.add({
+          "questions": questions,
+          "contents": contents,
+          "originalContent": originalContent,
+          "isChecked": List<bool>.filled(questions.length, false),
+        });
+      } else {
+        _showErrorDialog(
+            'Failed to get response from server for one of the converted images.');
+      }
+    }
+
+    Navigator.of(context).pushReplacement(MaterialPageRoute(
+      builder: (context) => MultiFileQuestionListView(
+        fileResponses: allFileResponses,
+      ),
+    ));
   }
 
   void _showErrorDialog(String message) {
