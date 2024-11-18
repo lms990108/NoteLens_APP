@@ -124,34 +124,75 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'], // 허용 확장자
+        allowMultiple: true, // 다중 파일 선택 허용
       );
 
-      if (result != null) {
-        File file = File(result.files.single.path!);
+      if (result != null && result.files.isNotEmpty) {
+        // 선택한 파일 리스트 생성
+        List<File> files = result.paths.map((path) => File(path!)).toList();
 
-        // 파일 확장자 확인
-        final extension = file.path.split('.').last.toLowerCase();
-        if (extension == 'pdf') {
-          // PDF를 이미지로 변환
-          List<File> convertedImages = await _convertPdfToImages(file);
+        // 로딩 화면으로 이동
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const QuestionExtractView(),
+        ));
 
-          if (convertedImages.isNotEmpty) {
-            // 변환된 이미지 처리
-            _handleConvertedImages(convertedImages);
-          } else {
-            _showErrorDialog('No images could be extracted from the PDF.');
+        // 각 파일을 병렬로 처리
+        List<Map<String, dynamic>> allFileResponses = [];
+
+        await Future.wait(files.map((file) async {
+          final extension = file.path.split('.').last.toLowerCase();
+          List<File> processedImages = [];
+
+          if (extension == 'pdf') {
+            // PDF를 이미지로 변환
+            processedImages = await _convertPdfToImages(file);
+          } else if (['jpg', 'jpeg', 'png'].contains(extension)) {
+            // 이미지는 그대로 처리
+            processedImages = [file];
           }
-        } else if (['jpg', 'jpeg', 'png'].contains(extension)) {
-          // 이미지 파일인 경우 기존 `_pickImage` 로직과 동일
-          _pickImage(ImageSource.gallery);
+
+          if (processedImages.isNotEmpty) {
+            // 변환된 각 이미지 파일을 처리
+            for (var imageFile in processedImages) {
+              final response =
+                  await widget.viewModel.uploadFileToServer(imageFile);
+
+              if (response != null) {
+                final questions =
+                    List<String>.from(response['underlined_text']?.keys ?? []);
+                final contents = List<String>.from(
+                    response['underlined_text']?.values ?? []);
+                final originalContent = response['original_content'] ?? '';
+
+                allFileResponses.add({
+                  "questions": questions,
+                  "contents": contents,
+                  "originalContent": originalContent,
+                  "isChecked": List<bool>.filled(questions.length, false),
+                });
+              } else {
+                _showErrorDialog(
+                    'Failed to get response from server for one of the files.');
+              }
+            }
+          }
+        }));
+
+        if (allFileResponses.isNotEmpty) {
+          // 파일별 데이터를 MultiFileQuestionListView에 전달
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (context) => MultiFileQuestionListView(
+              fileResponses: allFileResponses,
+            ),
+          ));
         } else {
-          _showErrorDialog('Unsupported file type selected.');
+          _showErrorDialog('No valid files were processed.');
         }
       } else {
-        _showErrorDialog('No file selected.');
+        _showErrorDialog('No files selected.');
       }
     } catch (e) {
-      _showErrorDialog('An error occurred while picking a file.');
+      _showErrorDialog('An error occurred while picking files: $e');
     }
   }
 
