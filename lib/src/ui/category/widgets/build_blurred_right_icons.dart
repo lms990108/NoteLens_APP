@@ -23,9 +23,9 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
 
   Future<void> _pickMultipleImages() async {
     try {
-      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
 
-      if (pickedFiles != null && pickedFiles.isNotEmpty) {
+      if (pickedFiles.isNotEmpty) {
         List<File> imageFiles =
             pickedFiles.map((xfile) => File(xfile.path)).toList();
 
@@ -208,18 +208,16 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
           height: 1920,
         );
 
-        if (image != null) {
-          final imageData =
-              await image.createImageIfNotAvailable(); // 이미지 데이터를 생성
-          final byteData = await imageData.toByteData(
-              format: ImageByteFormat.png); // PNG 포맷으로 변환
-          if (byteData != null) {
-            final tempDir = await getTemporaryDirectory();
-            final imagePath = '${tempDir.path}/page_$i.png';
-            final imageFile = File(imagePath)
-              ..writeAsBytesSync(byteData.buffer.asUint8List());
-            imageFiles.add(imageFile);
-          }
+        final imageData =
+            await image.createImageIfNotAvailable(); // 이미지 데이터를 생성
+        final byteData = await imageData.toByteData(
+            format: ImageByteFormat.png); // PNG 포맷으로 변환
+        if (byteData != null) {
+          final tempDir = await getTemporaryDirectory();
+          final imagePath = '${tempDir.path}/page_$i.png';
+          final imageFile = File(imagePath)
+            ..writeAsBytesSync(byteData.buffer.asUint8List());
+          imageFiles.add(imageFile);
         }
       }
 

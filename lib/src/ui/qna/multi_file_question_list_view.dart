@@ -9,8 +9,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 class MultiFileQuestionListView extends StatefulWidget {
   final List<Map<String, dynamic>> fileResponses;
 
-  const MultiFileQuestionListView({Key? key, required this.fileResponses})
-      : super(key: key);
+  const MultiFileQuestionListView({super.key, required this.fileResponses});
 
   @override
   _MultiFileQuestionListViewState createState() =>
@@ -94,7 +93,7 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
   Future<List<String>> _sendQuestionsToChatGpt(
       List<String> selectedQuestions, List<String> originalContents) async {
     final apiKey = dotenv.env['OPENAI_API_KEY']!;
-    final apiUrl = 'https://api.openai.com/v1/chat/completions';
+    const apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     // 각 질문에 대해 API 요청 생성
     List<Future<String>> apiRequests =
@@ -175,7 +174,7 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
               child: SmoothPageIndicator(
                 controller: _pageController,
                 count: widget.fileResponses.length,
-                effect: WormEffect(
+                effect: const WormEffect(
                   dotWidth: 10.0,
                   dotHeight: 10.0,
                   spacing: 8.0,

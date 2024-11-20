@@ -16,7 +16,7 @@ class _CreateCategoryViewState extends State<CreateCategoryView> {
 
   String _title = '';
   String? _description;
-  bool _isDeleted = false;
+  final bool _isDeleted = false;
 
   void _submitForm(CategoryListViewModel categoryListViewModel) {
     if (_formKey.currentState?.validate() ?? false) {
