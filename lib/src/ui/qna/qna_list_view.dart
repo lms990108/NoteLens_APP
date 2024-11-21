@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:notelens_app/src/data/model/qna.dart';
 import 'package:notelens_app/src/data/repository/qna_repository.dart';
 import 'package:notelens_app/src/ui/qna/qna_view.dart';
-import 'package:notelens_app/src/ui/question/view/question_answer_view.dart';
 import '../custom/custom_appbar.dart';
 
 class QnAListView extends StatefulWidget {

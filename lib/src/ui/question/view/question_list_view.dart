@@ -9,13 +9,13 @@ class QuestionListView extends StatefulWidget {
   final Function(int, bool) onCheckChanged; // 체크 상태 변경 콜백
 
   const QuestionListView({
-    Key? key,
+    super.key,
     required this.questions,
     required this.contents,
     required this.originalContent,
     required this.isChecked,
     required this.onCheckChanged,
-  }) : super(key: key);
+  });
 
   @override
   _QuestionListViewState createState() => _QuestionListViewState();

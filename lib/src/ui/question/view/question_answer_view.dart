@@ -67,7 +67,7 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
     }
   }
 
-  void _showSaveOptionsDialog(BuildContext context, int currentIndex) {
+  void _showSaveOptionsDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -85,7 +85,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
             ),
             TextButton(
               onPressed: () {
-                _saveQnA(currentIndex);
                 Navigator.pop(context);
                 Navigator.pop(context); // 다이얼로그 닫기
               },
@@ -93,7 +92,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
             ),
             ElevatedButton(
               onPressed: () {
-                _saveQnA(currentIndex);
                 Navigator.of(context).pushReplacement(MaterialPageRoute(
                   builder: (context) => const CategoryListView(),
                 ));
@@ -104,35 +102,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
         );
       },
     );
-  }
-
-  void _saveQnA(int index) async {
-    if (selectedCategory == null) {
-      print("카테고리를 선택해주세요.");
-      return;
-    }
-
-    // 선택된 카테고리의 ID 가져오기
-    final category =
-        categories.firstWhere((cat) => cat.title == selectedCategory);
-
-    // QnA 객체 생성
-    final qna = QnA(
-      title: "QnA ${index + 1}",
-      qContent: widget.questions[index],
-      aContent: widget.answers[index],
-      memo: memo,
-      createdAt: DateTime.now(),
-      isDeleted: false,
-      categoryId: category.id!,
-    );
-
-    try {
-      await _qnaRepository.createQnA(qna);
-      print("QnA 저장 성공: ${qna.title}");
-    } catch (e) {
-      print("QnA 저장 실패: $e");
-    }
   }
 
   @override
@@ -224,7 +193,6 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             String? newCategoryName;
-            bool isLoading = categories.isEmpty;
 
             return BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
@@ -267,33 +235,42 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                           ),
                           const SizedBox(height: 20),
                           isExistingCategory
-                              ? isLoading
-                                  ? const CircularProgressIndicator()
-                                  : DropdownButtonFormField<String>(
-                                      value: selectedCategory,
-                                      onChanged: (String? newValue) {
-                                        setState(() {
-                                          selectedCategory = newValue;
-                                        });
-                                      },
-                                      items: categories.map((category) {
-                                        return DropdownMenuItem<String>(
-                                          value: category.title,
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.folder,
-                                                  color: Colors.grey),
-                                              const SizedBox(width: 8),
-                                              Text(category.title),
-                                            ],
+                              ? DropdownButtonFormField<String>(
+                                  value: selectedCategory,
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      selectedCategory = newValue;
+                                    });
+                                  },
+                                  items: categories.isEmpty
+                                      ? [
+                                          const DropdownMenuItem(
+                                            value: null,
+                                            child: Text(
+                                              "카테고리가 없습니다",
+                                              style:
+                                                  TextStyle(color: Colors.grey),
+                                            ),
                                           ),
-                                        );
-                                      }).toList(),
-                                      decoration: const InputDecoration(
-                                        labelText: '기존 카테고리',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                    )
+                                        ]
+                                      : categories.map((category) {
+                                          return DropdownMenuItem<String>(
+                                            value: category.title,
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.folder,
+                                                    color: Colors.grey),
+                                                const SizedBox(width: 8),
+                                                Text(category.title),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                  decoration: const InputDecoration(
+                                    labelText: '기존 카테고리',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                )
                               : Column(
                                   children: [
                                     TextField(
@@ -321,40 +298,30 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                           const SizedBox(height: 20),
                           ElevatedButton(
                             onPressed: () async {
-                              if (!isExistingCategory &&
-                                  (newCategoryName?.isNotEmpty ?? false)) {
-                                // 새 카테고리 생성 로직 추가
-                                final newCategory = Category(
-                                  id: null, // ID는 DB에서 자동 생성되도록 null로 설정
-                                  title: newCategoryName!,
-                                  description: memo,
-                                  createdAt: DateTime.now(),
-                                  isDeleted: false,
-                                );
-
-                                try {
-                                  final savedCategory =
-                                      await _categoryRepository
-                                          .createCategory(newCategory);
-                                  setState(() {
-                                    categories.add(savedCategory);
-                                    selectedCategory = savedCategory.title;
-                                  });
-                                  print("새 카테고리 저장 성공: ${savedCategory.title}");
-                                } catch (e) {
-                                  print("새 카테고리 저장 실패: $e");
-                                }
-                              }
-
                               final currentIndex =
                                   pageController.page?.round() ?? 0;
-                              _showSaveOptionsDialog(context, currentIndex);
 
-                              // 홈 화면으로 돌아가는 코드
-                              /*Navigator.of(context)
-                                  .pushReplacement(MaterialPageRoute(
-                                builder: (context) => const CategoryListView(),
-                              ));*/
+                              if (isExistingCategory) {
+                                if (selectedCategory == null ||
+                                    selectedCategory!.isEmpty) {
+                                  _showOverlayMessage(context, '카테고리를 선택해주세요.');
+                                  return; // 카테고리가 선택되지 않았으면 저장하지 않음
+                                }
+                                // 기존 카테고리에 저장
+                                _saveExistingCategory(currentIndex);
+                              } else if (!isExistingCategory &&
+                                  (newCategoryName?.isNotEmpty ?? false)) {
+                                // 새 카테고리 저장
+                                await _saveNewCategory(
+                                    newCategoryName!, currentIndex);
+                              } else {
+                                _showOverlayMessage(
+                                    context, '새 카테고리 이름을 입력해주세요.');
+                                return; // 새 카테고리 이름이 비어 있으면 저장하지 않음
+                              }
+
+                              // 저장 후 옵션 다이얼로그 표시
+                              _showSaveOptionsDialog(context);
                             },
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size.fromHeight(50),
@@ -368,5 +335,100 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
         );
       },
     );
+  }
+
+  void _saveExistingCategory(int index) async {
+    if (selectedCategory == null || selectedCategory!.isEmpty) {
+      print("카테고리를 선택해주세요."); // 디버그 로그
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('카테고리를 선택해주세요.')),
+      );
+      return;
+    }
+
+    // 선택된 카테고리의 ID 가져오기
+    final category =
+        categories.firstWhere((cat) => cat.title == selectedCategory);
+
+    // QnA 객체 생성
+    final qna = QnA(
+      title: "QnA ${index + 1}",
+      qContent: widget.questions[index],
+      aContent: widget.answers[index],
+      memo: memo,
+      createdAt: DateTime.now(),
+      isDeleted: false,
+      categoryId: category.id!,
+    );
+
+    try {
+      await _qnaRepository.createQnA(qna);
+      print("기존 카테고리에 QnA 저장 성공: ${qna.title}");
+    } catch (e) {
+      print("기존 카테고리에 QnA 저장 실패: $e");
+    }
+  }
+
+  Future<void> _saveNewCategory(String newCategoryName, int index) async {
+    if (newCategoryName.isEmpty) {
+      print("새 카테고리 이름을 입력해주세요.");
+      return;
+    }
+
+    // 새 카테고리 객체 생성
+    final newCategory = Category(
+      id: null, // ID는 DB에서 자동 생성되도록 null로 설정
+      title: newCategoryName,
+      description: memo,
+      createdAt: DateTime.now(),
+      isDeleted: false,
+    );
+
+    try {
+      final savedCategory =
+          await _categoryRepository.createCategory(newCategory);
+      setState(() {
+        categories.add(savedCategory);
+        selectedCategory = savedCategory.title; // 새 카테고리를 자동 선택
+      });
+      print("새 카테고리 저장 성공: ${savedCategory.title}");
+    } catch (e) {
+      print("새 카테고리 저장 실패: $e");
+      return;
+    }
+
+    // 저장 후 QnA 생성
+    _saveExistingCategory(index);
+  }
+
+  void _showOverlayMessage(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.1,
+        left: MediaQuery.of(context).size.width * 0.1,
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
   }
 }

@@ -50,9 +50,9 @@ void launchURL() async {
   const url =
       'https://docs.google.com/forms/d/e/1FAIpQLScP8rXDoj_nydCOCnIwpL96WtA6N6gjYyaNUx4ANQfhFdjwrw/viewform?usp=sf_link';
   final Uri uri = Uri.parse(url);
-  if (await canLaunchUrl(uri)) {
+  try {
     await launchUrl(uri);
-  } else {
-    throw 'Could not launch $uri';
+  } catch (e) {
+    print('Launch error: $e');
   }
 }
