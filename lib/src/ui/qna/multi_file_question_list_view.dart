@@ -19,14 +19,25 @@ class MultiFileQuestionListView extends StatefulWidget {
 class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
   final PageController _pageController = PageController();
   late List<List<bool>> _isChecked; // 각 파일의 체크 상태 저장
+  late List<List<String>> _questions; // 질문 상태
+  late List<List<String>> _contents; // 내용 상태
 
   @override
   void initState() {
     super.initState();
-    // 각 파일의 질문 개수에 맞게 체크 상태 초기화
+
+    // 상태 초기화
     _isChecked = widget.fileResponses
         .map((fileData) =>
             List<bool>.filled(fileData["questions"].length, false))
+        .toList();
+
+    _questions = widget.fileResponses
+        .map((fileData) => List<String>.from(fileData["questions"]))
+        .toList();
+
+    _contents = widget.fileResponses
+        .map((fileData) => List<String>.from(fileData["contents"]))
         .toList();
   }
 
@@ -34,6 +45,16 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _updateFileData(
+      int fileIndex, List<String> newQuestions, List<String> newContents) {
+    setState(() {
+      _questions[fileIndex] = newQuestions;
+      _contents[fileIndex] = newContents;
+      _isChecked[fileIndex] =
+          List<bool>.filled(newQuestions.length, false); // 체크 상태 초기화
+    });
   }
 
   Future<void> _sendSelectedQuestionsToGpt() async {
@@ -46,15 +67,16 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
           questionIndex < _isChecked[fileIndex].length;
           questionIndex++) {
         if (_isChecked[fileIndex][questionIndex]) {
-          selectedQuestions
-              .add(widget.fileResponses[fileIndex]["contents"][questionIndex]);
+          selectedQuestions.add(_contents[fileIndex][questionIndex]);
         }
       }
       originalContents.add(widget.fileResponses[fileIndex]["originalContent"]);
     }
 
     if (selectedQuestions.isEmpty) {
-      print("No questions selected");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No questions selected.")),
+      );
       return;
     }
 
@@ -86,7 +108,9 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
       );
     } catch (error) {
       Navigator.of(context).pop();
-      print("Error: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $error")),
+      );
     }
   }
 
@@ -132,8 +156,7 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
               'Failed to get response from ChatGPT API: ${response.statusCode}');
         }
       } catch (error) {
-        print('Error sending request to ChatGPT API: $error');
-        throw Exception('Error sending request to ChatGPT API');
+        throw Exception('Error sending request to ChatGPT API: $error');
       }
     }).toList();
 
@@ -151,16 +174,18 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
             controller: _pageController,
             itemCount: widget.fileResponses.length,
             itemBuilder: (context, index) {
-              final fileData = widget.fileResponses[index];
               return QuestionListView(
-                questions: List<String>.from(fileData["questions"]),
-                contents: List<String>.from(fileData["contents"]),
-                originalContent: fileData["originalContent"] as String,
-                isChecked: _isChecked[index], // 현재 페이지의 체크 상태 전달
+                questions: _questions[index],
+                contents: _contents[index],
+                originalContent: widget.fileResponses[index]["originalContent"],
+                isChecked: _isChecked[index],
                 onCheckChanged: (questionIndex, value) {
                   setState(() {
-                    _isChecked[index][questionIndex] = value; // 체크 상태 업데이트
+                    _isChecked[index][questionIndex] = value;
                   });
+                },
+                onMergeCompleted: (newQuestions, newContents, newChecked) {
+                  _updateFileData(index, newQuestions, newContents);
                 },
               );
             },
@@ -185,7 +210,6 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
           ),
         ],
       ),
-      // GPT 요청 버튼
       bottomNavigationBar: BottomAppBar(
         child: ElevatedButton(
           onPressed: _sendSelectedQuestionsToGpt,
