@@ -7,6 +7,8 @@ class QuestionListView extends StatefulWidget {
   final String originalContent;
   final List<bool> isChecked; // 체크 상태 리스트
   final Function(int, bool) onCheckChanged; // 체크 상태 변경 콜백
+  final Function(List<String>, List<String>, List<bool>)
+      onMergeCompleted; // 병합 완료 콜백
 
   const QuestionListView({
     super.key,
@@ -15,6 +17,7 @@ class QuestionListView extends StatefulWidget {
     required this.originalContent,
     required this.isChecked,
     required this.onCheckChanged,
+    required this.onMergeCompleted,
   });
 
   @override
@@ -22,8 +25,8 @@ class QuestionListView extends StatefulWidget {
 }
 
 class _QuestionListViewState extends State<QuestionListView> {
-  // 병합 상태를 위한 선택 관리
-  List<bool> _mergeSelections = [];
+  bool _isEditing = false; // 수정 모드 여부
+  late List<bool> _mergeSelections; // 병합 상태 관리
 
   @override
   void initState() {
@@ -34,73 +37,72 @@ class _QuestionListViewState extends State<QuestionListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // 병합 버튼
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: _mergeSelectedQuestions,
-              child: const Text("Merge Selected Questions"),
-            ),
+      appBar: AppBar(
+        title: Text(_isEditing ? "Edit Mode" : "Questions"),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing; // 수정 모드 토글
+                _mergeSelections =
+                    List<bool>.filled(widget.questions.length, false);
+              });
+            },
           ),
-          // 질문 리스트
-          Expanded(
-            child: ListView.builder(
-              itemCount: widget.questions.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 병합 선택 체크박스
-                      Checkbox(
-                        value: _mergeSelections[index],
-                        onChanged: (value) {
-                          setState(() {
-                            _mergeSelections[index] = value ?? false;
-                          });
-                        },
-                      ),
-                      // 기존의 선택 상태 아이콘
-                      IconButton(
-                        icon: Icon(
-                          widget.isChecked[index]
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: widget.isChecked[index]
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                        onPressed: () {
-                          widget.onCheckChanged(
-                              index, !widget.isChecked[index]);
-                        },
-                      ),
-                    ],
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: widget.questions.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            leading: _isEditing
+                ? Checkbox(
+                    value: _mergeSelections[index],
+                    onChanged: (value) {
+                      setState(() {
+                        _mergeSelections[index] = value ?? false;
+                      });
+                    },
+                  )
+                : IconButton(
+                    icon: Icon(
+                      widget.isChecked[index]
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color:
+                          widget.isChecked[index] ? Colors.green : Colors.grey,
+                    ),
+                    onPressed: () {
+                      widget.onCheckChanged(index, !widget.isChecked[index]);
+                    },
                   ),
-                  title: Text(widget.questions[index]),
-                  subtitle: Text(widget.contents[index]),
-                  trailing: IconButton(
+            title: Text(widget.questions[index]),
+            subtitle: Text(widget.contents[index]),
+            trailing: _isEditing
+                ? IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
                       _editContent(index);
                     },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+                  )
+                : null,
+          );
+        },
       ),
+      bottomNavigationBar: _isEditing
+          ? ElevatedButton(
+              onPressed: _mergeSelectedQuestions,
+              child: const Text("Merge Selected Questions"),
+            )
+          : ElevatedButton(
+              onPressed: _callApiWithSelectedQuestions,
+              child: const Text("Send Selected Questions to API"),
+            ),
     );
   }
 
-  // 병합 기능 구현
   void _mergeSelectedQuestions() {
-    // 선택된 질문들의 인덱스 가져오기
     final selectedIndexes = _mergeSelections
         .asMap()
         .entries
@@ -116,15 +118,11 @@ class _QuestionListViewState extends State<QuestionListView> {
       return;
     }
 
-    // 병합된 질문과 내용 생성
-    final mergedQuestion = selectedIndexes
-        .map((index) => widget.questions[index])
-        .join(" "); // 질문 병합
-    final mergedContent = selectedIndexes
-        .map((index) => widget.contents[index])
-        .join("\n"); // 내용 병합
+    final mergedQuestion =
+        selectedIndexes.map((index) => widget.questions[index]).join(" ");
+    final mergedContent =
+        selectedIndexes.map((index) => widget.contents[index]).join("\n");
 
-    // 병합된 질문을 편집 가능하도록 다이얼로그 제공
     TextEditingController questionController =
         TextEditingController(text: mergedQuestion);
     TextEditingController contentController =
@@ -154,27 +152,35 @@ class _QuestionListViewState extends State<QuestionListView> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text("Cancel"),
             ),
             TextButton(
               onPressed: () {
                 setState(() {
-                  // 선택된 질문 및 내용을 제거
-                  selectedIndexes.reversed.forEach((index) {
-                    widget.questions.removeAt(index);
-                    widget.contents.removeAt(index);
-                  });
+                  final updatedQuestions = List<String>.from(widget.questions);
+                  final updatedContents = List<String>.from(widget.contents);
+                  final updatedIsChecked = List<bool>.from(widget.isChecked);
 
-                  // 병합된 질문 및 내용을 추가
-                  widget.questions.add(questionController.text);
-                  widget.contents.add(contentController.text);
+                  // 기존 선택된 질문과 내용을 삭제
+                  for (int i = selectedIndexes.length - 1; i >= 0; i--) {
+                    updatedQuestions.removeAt(selectedIndexes[i]);
+                    updatedContents.removeAt(selectedIndexes[i]);
+                    updatedIsChecked.removeAt(selectedIndexes[i]);
+                  }
 
-                  // 병합 상태 초기화
+                  // 병합된 질문과 내용을 추가
+                  updatedQuestions.add(questionController.text);
+                  updatedContents.add(contentController.text);
+                  updatedIsChecked.add(false); // 병합된 질문의 초기 체크 상태
+
+                  // 부모 위젯에 업데이트된 상태 전달
+                  widget.onMergeCompleted(
+                      updatedQuestions, updatedContents, updatedIsChecked);
+
+                  // 병합 선택 상태 초기화
                   _mergeSelections =
-                      List<bool>.filled(widget.questions.length, false);
+                      List<bool>.filled(updatedQuestions.length, false);
                 });
                 Navigator.of(context).pop();
               },
@@ -201,9 +207,7 @@ class _QuestionListViewState extends State<QuestionListView> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -219,5 +223,24 @@ class _QuestionListViewState extends State<QuestionListView> {
         );
       },
     );
+  }
+
+  void _callApiWithSelectedQuestions() {
+    final selectedQuestions = widget.questions
+        .asMap()
+        .entries
+        .where((entry) => widget.isChecked[entry.key])
+        .map((entry) => entry.value)
+        .toList();
+
+    if (selectedQuestions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No questions selected.")),
+      );
+      return;
+    }
+
+    // 여기에 API 호출 로직 추가
+    print("Selected Questions: $selectedQuestions");
   }
 }
