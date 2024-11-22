@@ -95,10 +95,7 @@ class _QuestionListViewState extends State<QuestionListView> {
               onPressed: _mergeSelectedQuestions,
               child: const Text("Merge Selected Questions"),
             )
-          : ElevatedButton(
-              onPressed: _callApiWithSelectedQuestions,
-              child: const Text("Send Selected Questions to API"),
-            ),
+          : null,
     );
   }
 
