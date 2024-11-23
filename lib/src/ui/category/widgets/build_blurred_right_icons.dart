@@ -131,16 +131,16 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       if (result != null && result.files.isNotEmpty) {
         List<File> files = result.paths.map((path) => File(path!)).toList();
 
-        // PDF만 선택한 경우 미리 보기 제공
+        // PDF만 선택한 경우 페이지 선택 화면 제공
         if (files.length == 1 && files.first.path.endsWith('.pdf')) {
           File pdfFile = files.first;
 
           Navigator.of(context).push(MaterialPageRoute(
             builder: (context) => PdfPreviewScreen(
               pdfFile: pdfFile,
-              onConfirm: () async {
+              onConfirm: (selectedPage) async {
                 Navigator.pop(context); // 미리 보기 화면 닫기
-                await _processFiles([pdfFile]); // 다음 단계 진행
+                await _processPdfFile(pdfFile, selectedPage); // 선택된 페이지로 처리
               },
             ),
           ));
@@ -153,6 +153,45 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       }
     } catch (e) {
       _showErrorDialog('An error occurred while picking files: $e');
+    }
+  }
+
+  Future<void> _processPdfFile(File pdfFile, int selectedPage) async {
+    // PDF의 선택된 페이지를 이미지로 변환
+    final processedImages =
+        await _convertSpecificPageToImage(pdfFile, selectedPage);
+
+    if (processedImages.isNotEmpty) {
+      _handleConvertedImages(processedImages);
+    } else {
+      _showErrorDialog('Failed to process the selected PDF page.');
+    }
+  }
+
+  Future<List<File>> _convertSpecificPageToImage(
+      File pdfFile, int pageNumber) async {
+    try {
+      final document = await PdfDocument.openFile(pdfFile.path);
+      final page = await document.getPage(pageNumber);
+      final image = await page.render(
+        width: 1080, // 원하는 해상도
+        height: 1920,
+      );
+
+      final imageData = await image.createImageIfNotAvailable();
+      final byteData = await imageData.toByteData(format: ImageByteFormat.png);
+
+      if (byteData != null) {
+        final tempDir = await getTemporaryDirectory();
+        final imagePath = '${tempDir.path}/page_$pageNumber.png';
+        final imageFile = File(imagePath)
+          ..writeAsBytesSync(byteData.buffer.asUint8List());
+        return [imageFile];
+      }
+      return [];
+    } catch (e) {
+      _showErrorDialog('Failed to convert PDF page to image: $e');
+      return [];
     }
   }
 
