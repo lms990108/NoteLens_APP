@@ -17,15 +17,15 @@ class PdfPreviewScreen extends StatefulWidget {
 }
 
 class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
-  late PdfControllerPinch _pdfController;
+  late PdfController _pdfController;
   int _totalPages = 0;
-  List<int> _selectedPages = []; // 선택된 페이지 리스트
-  int _currentPage = 1;
+  int _currentPage = 1; // 현재 페이지 상태
+  final Set<int> _selectedPages = {}; // 선택된 페이지를 저장하는 Set
 
   @override
   void initState() {
     super.initState();
-    _pdfController = PdfControllerPinch(
+    _pdfController = PdfController(
       document: PdfDocument.openFile(widget.pdfFile.path),
     );
   }
@@ -51,59 +51,56 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PDF 미리보기'),
-      ),
-      body: Stack(
-        children: [
-          PdfViewPinch(
-            controller: _pdfController,
-            onDocumentLoaded: (document) {
-              setState(() {
-                _totalPages = document.pagesCount; // 총 페이지 수 저장
-              });
-            },
-            onPageChanged: (page) {
-              setState(() {
-                _currentPage = page; // 현재 페이지 업데이트
-              });
-            },
-          ),
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Checkbox(
+        actions: [
+          Row(
+            children: [
+              Checkbox(
                 value: _selectedPages.contains(_currentPage),
                 onChanged: (_) => _togglePageSelection(),
-                activeColor: Colors.white,
-                checkColor: Colors.black,
+                activeColor: Colors.black, // 체크박스 색상을 검은색으로 설정
+                checkColor: Colors.black, // 체크 표시 색상을 검은색으로 설정
               ),
-            ),
-          ),
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_selectedPages.isNotEmpty) {
-                  widget.onConfirm(_selectedPages); // 선택된 페이지 전달
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('최소 한 페이지를 선택하세요.'),
-                    ),
-                  );
-                }
-              },
-              child: const Text('선택한 페이지 전송'),
-            ),
+              Text(
+                '$_currentPage / $_totalPages',
+                style: const TextStyle(
+                  color: Colors.black, // 페이지 표시 텍스트를 검은색으로 설정
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
           ),
         ],
+        backgroundColor: Colors.white, // AppBar 배경색을 흰색으로 설정
+        elevation: 0, // AppBar 그림자 제거
+      ),
+      body: PdfView(
+        controller: _pdfController,
+        scrollDirection: Axis.horizontal, // 가로 슬라이드로 표시
+        onDocumentLoaded: (document) {
+          setState(() {
+            _totalPages = document.pagesCount; // 총 페이지 수 저장
+          });
+        },
+        onPageChanged: (page) {
+          setState(() {
+            _currentPage = page; // 현재 페이지 업데이트
+          });
+        },
+      ),
+      bottomNavigationBar: ElevatedButton(
+        onPressed: () {
+          if (_selectedPages.isNotEmpty) {
+            widget.onConfirm(_selectedPages.toList());
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('최소 한 페이지를 선택하세요.'),
+              ),
+            );
+          }
+        },
+        child: const Text('선택한 페이지 전송'),
       ),
     );
   }
