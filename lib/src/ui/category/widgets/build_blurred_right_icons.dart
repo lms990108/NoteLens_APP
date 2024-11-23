@@ -34,10 +34,8 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
           builder: (context) => const QuestionExtractView(),
         ));
 
-        // 여러 파일의 응답을 저장할 리스트
         List<Map<String, dynamic>> allFileResponses = [];
 
-        // 각 파일에 대해 서버 요청
         for (var file in imageFiles) {
           final response = await widget.viewModel.uploadFileToServer(file);
 
@@ -52,8 +50,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
               "questions": questions,
               "contents": contents,
               "originalContent": originalContent,
-              "isChecked":
-                  List<bool>.filled(questions.length, false), // 초기 체크 상태
+              "isChecked": List<bool>.filled(questions.length, false),
             });
           } else {
             _showErrorDialog(
@@ -61,7 +58,6 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
           }
         }
 
-        // 파일별 데이터를 MultiFileQuestionListView에 전달
         Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (context) => MultiFileQuestionListView(
             fileResponses: allFileResponses,
@@ -82,12 +78,10 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
 
-        // 로딩 화면으로 이동
         Navigator.of(context).push(MaterialPageRoute(
           builder: (context) => const QuestionExtractView(),
         ));
 
-        // API 요청 전송 및 응답 처리
         final response = await widget.viewModel.uploadFileToServer(imageFile);
 
         if (response != null) {
@@ -136,9 +130,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
             onConfirm: (selectedPages) async {
               Navigator.pop(context); // 미리 보기 화면 닫기
               print('선택된 페이지들: $selectedPages');
-              for (int page in selectedPages) {
-                await _processPdfFile(pdfFile, page); // 각 페이지 처리
-              }
+              await _processSelectedPages(pdfFile, selectedPages); // 여러 페이지 처리
             },
           ),
         ));
@@ -150,15 +142,19 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
     }
   }
 
-  Future<void> _processPdfFile(File pdfFile, int selectedPage) async {
-    // PDF의 선택된 페이지를 이미지로 변환
-    final processedImages =
-        await _convertSpecificPageToImage(pdfFile, selectedPage);
+  Future<void> _processSelectedPages(
+      File pdfFile, List<int> selectedPages) async {
+    final processedImages = <File>[];
+
+    for (int page in selectedPages) {
+      final images = await _convertSpecificPageToImage(pdfFile, page);
+      processedImages.addAll(images);
+    }
 
     if (processedImages.isNotEmpty) {
       _handleConvertedImages(processedImages);
     } else {
-      _showErrorDialog('Failed to process the selected PDF page.');
+      _showErrorDialog('No valid pages were processed.');
     }
   }
 
@@ -168,7 +164,7 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       final document = await PdfDocument.openFile(pdfFile.path);
       final page = await document.getPage(pageNumber);
       final image = await page.render(
-        width: 1080, // 원하는 해상도
+        width: 1080,
         height: 1920,
       );
 
@@ -185,96 +181,6 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       return [];
     } catch (e) {
       _showErrorDialog('Failed to convert PDF page to image: $e');
-      return [];
-    }
-  }
-
-// 기존 파일 처리 로직 유지
-  Future<void> _processFiles(List<File> files) async {
-    // 로딩 화면으로 이동
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => const QuestionExtractView(),
-    ));
-
-    // 각 파일을 병렬로 처리
-    List<Map<String, dynamic>> allFileResponses = [];
-
-    await Future.wait(files.map((file) async {
-      final extension = file.path.split('.').last.toLowerCase();
-      List<File> processedImages = [];
-
-      if (extension == 'pdf') {
-        // PDF를 이미지로 변환
-        processedImages = await _convertPdfToImages(file);
-      } else if (['jpg', 'jpeg', 'png'].contains(extension)) {
-        // 이미지는 그대로 처리
-        processedImages = [file];
-      }
-
-      if (processedImages.isNotEmpty) {
-        for (var imageFile in processedImages) {
-          final response = await widget.viewModel.uploadFileToServer(imageFile);
-
-          if (response != null) {
-            final questions =
-                List<String>.from(response['underlined_text']?.keys ?? []);
-            final contents =
-                List<String>.from(response['underlined_text']?.values ?? []);
-            final originalContent = response['original_content'] ?? '';
-
-            allFileResponses.add({
-              "questions": questions,
-              "contents": contents,
-              "originalContent": originalContent,
-              "isChecked": List<bool>.filled(questions.length, false),
-            });
-          } else {
-            _showErrorDialog(
-                'Failed to get response from server for one of the files.');
-          }
-        }
-      }
-    }));
-
-    if (allFileResponses.isNotEmpty) {
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-        builder: (context) => MultiFileQuestionListView(
-          fileResponses: allFileResponses,
-        ),
-      ));
-    } else {
-      _showErrorDialog('No valid files were processed.');
-    }
-  }
-
-  Future<List<File>> _convertPdfToImages(File pdfFile) async {
-    try {
-      final document = await PdfDocument.openFile(pdfFile.path);
-      List<File> imageFiles = [];
-
-      for (int i = 1; i <= document.pageCount; i++) {
-        final page = await document.getPage(i);
-        final image = await page.render(
-          width: 1080, // 원하는 해상도
-          height: 1920,
-        );
-
-        final imageData =
-            await image.createImageIfNotAvailable(); // 이미지 데이터를 생성
-        final byteData = await imageData.toByteData(
-            format: ImageByteFormat.png); // PNG 포맷으로 변환
-        if (byteData != null) {
-          final tempDir = await getTemporaryDirectory();
-          final imagePath = '${tempDir.path}/page_$i.png';
-          final imageFile = File(imagePath)
-            ..writeAsBytesSync(byteData.buffer.asUint8List());
-          imageFiles.add(imageFile);
-        }
-      }
-
-      return imageFiles;
-    } catch (e) {
-      _showErrorDialog('Failed to convert PDF to images: $e');
       return [];
     }
   }

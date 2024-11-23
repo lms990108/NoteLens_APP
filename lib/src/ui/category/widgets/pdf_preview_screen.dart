@@ -76,19 +76,11 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                 color: Colors.black.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Row(
-                children: [
-                  Checkbox(
-                    value: _selectedPages.contains(_currentPage),
-                    onChanged: (_) => _togglePageSelection(),
-                    activeColor: Colors.white,
-                    checkColor: Colors.black,
-                  ),
-                  const Text(
-                    '선택',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
+              child: Checkbox(
+                value: _selectedPages.contains(_currentPage),
+                onChanged: (_) => _togglePageSelection(),
+                activeColor: Colors.white,
+                checkColor: Colors.black,
               ),
             ),
           ),
