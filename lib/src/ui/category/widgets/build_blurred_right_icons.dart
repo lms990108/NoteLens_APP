@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:notelens_app/src/ui/category/widgets/pdf_preview_screen.dart';
 import 'package:notelens_app/src/ui/qna/multi_file_question_list_view.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf_render/pdf_render.dart';
@@ -128,71 +129,88 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       );
 
       if (result != null && result.files.isNotEmpty) {
-        // 선택한 파일 리스트 생성
         List<File> files = result.paths.map((path) => File(path!)).toList();
 
-        // 로딩 화면으로 이동
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => const QuestionExtractView(),
-        ));
+        // PDF만 선택한 경우 미리 보기 제공
+        if (files.length == 1 && files.first.path.endsWith('.pdf')) {
+          File pdfFile = files.first;
 
-        // 각 파일을 병렬로 처리
-        List<Map<String, dynamic>> allFileResponses = [];
-
-        await Future.wait(files.map((file) async {
-          final extension = file.path.split('.').last.toLowerCase();
-          List<File> processedImages = [];
-
-          if (extension == 'pdf') {
-            // PDF를 이미지로 변환
-            processedImages = await _convertPdfToImages(file);
-          } else if (['jpg', 'jpeg', 'png'].contains(extension)) {
-            // 이미지는 그대로 처리
-            processedImages = [file];
-          }
-
-          if (processedImages.isNotEmpty) {
-            // 변환된 각 이미지 파일을 처리
-            for (var imageFile in processedImages) {
-              final response =
-                  await widget.viewModel.uploadFileToServer(imageFile);
-
-              if (response != null) {
-                final questions =
-                    List<String>.from(response['underlined_text']?.keys ?? []);
-                final contents = List<String>.from(
-                    response['underlined_text']?.values ?? []);
-                final originalContent = response['original_content'] ?? '';
-
-                allFileResponses.add({
-                  "questions": questions,
-                  "contents": contents,
-                  "originalContent": originalContent,
-                  "isChecked": List<bool>.filled(questions.length, false),
-                });
-              } else {
-                _showErrorDialog(
-                    'Failed to get response from server for one of the files.');
-              }
-            }
-          }
-        }));
-
-        if (allFileResponses.isNotEmpty) {
-          // 파일별 데이터를 MultiFileQuestionListView에 전달
-          Navigator.of(context).pushReplacement(MaterialPageRoute(
-            builder: (context) => MultiFileQuestionListView(
-              fileResponses: allFileResponses,
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => PdfPreviewScreen(
+              pdfFile: pdfFile,
+              onConfirm: () async {
+                Navigator.pop(context); // 미리 보기 화면 닫기
+                await _processFiles([pdfFile]); // 다음 단계 진행
+              },
             ),
           ));
         } else {
-          _showErrorDialog('No valid files were processed.');
+          // PDF가 아닌 파일을 처리하거나 다중 파일 처리
+          await _processFiles(files);
         }
       } else {
         _showErrorDialog('No files selected.');
       }
     } catch (e) {
       _showErrorDialog('An error occurred while picking files: $e');
+    }
+  }
+
+// 기존 파일 처리 로직 유지
+  Future<void> _processFiles(List<File> files) async {
+    // 로딩 화면으로 이동
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => const QuestionExtractView(),
+    ));
+
+    // 각 파일을 병렬로 처리
+    List<Map<String, dynamic>> allFileResponses = [];
+
+    await Future.wait(files.map((file) async {
+      final extension = file.path.split('.').last.toLowerCase();
+      List<File> processedImages = [];
+
+      if (extension == 'pdf') {
+        // PDF를 이미지로 변환
+        processedImages = await _convertPdfToImages(file);
+      } else if (['jpg', 'jpeg', 'png'].contains(extension)) {
+        // 이미지는 그대로 처리
+        processedImages = [file];
+      }
+
+      if (processedImages.isNotEmpty) {
+        for (var imageFile in processedImages) {
+          final response = await widget.viewModel.uploadFileToServer(imageFile);
+
+          if (response != null) {
+            final questions =
+                List<String>.from(response['underlined_text']?.keys ?? []);
+            final contents =
+                List<String>.from(response['underlined_text']?.values ?? []);
+            final originalContent = response['original_content'] ?? '';
+
+            allFileResponses.add({
+              "questions": questions,
+              "contents": contents,
+              "originalContent": originalContent,
+              "isChecked": List<bool>.filled(questions.length, false),
+            });
+          } else {
+            _showErrorDialog(
+                'Failed to get response from server for one of the files.');
+          }
+        }
+      }
+    }));
+
+    if (allFileResponses.isNotEmpty) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (context) => MultiFileQuestionListView(
+          fileResponses: allFileResponses,
+        ),
+      ));
+    } else {
+      _showErrorDialog('No valid files were processed.');
     }
   }
 
