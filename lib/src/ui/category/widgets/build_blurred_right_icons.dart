@@ -125,29 +125,23 @@ class _BlurredRightIconsState extends State<BlurredRightIcons> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'], // 허용 확장자
-        allowMultiple: true, // 다중 파일 선택 허용
       );
 
       if (result != null && result.files.isNotEmpty) {
-        List<File> files = result.paths.map((path) => File(path!)).toList();
+        File pdfFile = File(result.files.first.path!);
 
-        // PDF만 선택한 경우 페이지 선택 화면 제공
-        if (files.length == 1 && files.first.path.endsWith('.pdf')) {
-          File pdfFile = files.first;
-
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => PdfPreviewScreen(
-              pdfFile: pdfFile,
-              onConfirm: (selectedPage) async {
-                Navigator.pop(context); // 미리 보기 화면 닫기
-                await _processPdfFile(pdfFile, selectedPage); // 선택된 페이지로 처리
-              },
-            ),
-          ));
-        } else {
-          // PDF가 아닌 파일을 처리하거나 다중 파일 처리
-          await _processFiles(files);
-        }
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => PdfPreviewScreen(
+            pdfFile: pdfFile,
+            onConfirm: (selectedPages) async {
+              Navigator.pop(context); // 미리 보기 화면 닫기
+              print('선택된 페이지들: $selectedPages');
+              for (int page in selectedPages) {
+                await _processPdfFile(pdfFile, page); // 각 페이지 처리
+              }
+            },
+          ),
+        ));
       } else {
         _showErrorDialog('No files selected.');
       }

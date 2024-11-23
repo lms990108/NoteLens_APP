@@ -4,7 +4,7 @@ import 'package:pdfx/pdfx.dart';
 
 class PdfPreviewScreen extends StatefulWidget {
   final File pdfFile;
-  final Function(int selectedPage) onConfirm;
+  final Function(List<int> selectedPages) onConfirm;
 
   const PdfPreviewScreen({
     super.key,
@@ -17,15 +17,16 @@ class PdfPreviewScreen extends StatefulWidget {
 }
 
 class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
-  late PdfController _pdfController;
+  late PdfControllerPinch _pdfController;
+  int _totalPages = 0;
+  List<int> _selectedPages = []; // 선택된 페이지 리스트
   int _currentPage = 1;
 
   @override
   void initState() {
     super.initState();
-    _pdfController = PdfController(
+    _pdfController = PdfControllerPinch(
       document: PdfDocument.openFile(widget.pdfFile.path),
-      initialPage: _currentPage - 1, // 초기 페이지 (0 기반)
     );
   }
 
@@ -35,45 +36,82 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
     super.dispose();
   }
 
+  void _togglePageSelection() {
+    setState(() {
+      if (_selectedPages.contains(_currentPage)) {
+        _selectedPages.remove(_currentPage); // 이미 선택된 페이지는 해제
+      } else {
+        _selectedPages.add(_currentPage); // 페이지 선택
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PDF 미리보기'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              widget.onConfirm(_currentPage); // 선택된 페이지 전달
+      ),
+      body: Stack(
+        children: [
+          PdfViewPinch(
+            controller: _pdfController,
+            onDocumentLoaded: (document) {
+              setState(() {
+                _totalPages = document.pagesCount; // 총 페이지 수 저장
+              });
             },
-            child: const Text(
-              '확인',
-              style: TextStyle(color: Colors.white),
+            onPageChanged: (page) {
+              setState(() {
+                _currentPage = page; // 현재 페이지 업데이트
+              });
+            },
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _selectedPages.contains(_currentPage),
+                    onChanged: (_) => _togglePageSelection(),
+                    activeColor: Colors.white,
+                    checkColor: Colors.black,
+                  ),
+                  const Text(
+                    '선택',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: ElevatedButton(
+              onPressed: () {
+                if (_selectedPages.isNotEmpty) {
+                  widget.onConfirm(_selectedPages); // 선택된 페이지 전달
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('최소 한 페이지를 선택하세요.'),
+                    ),
+                  );
+                }
+              },
+              child: const Text('선택한 페이지 전송'),
             ),
           ),
         ],
-      ),
-      body: PdfView(
-        controller: _pdfController,
-        onPageChanged: (page) {
-          setState(() {
-            _currentPage = page + 1; // 페이지 번호는 1부터 시작
-          });
-        },
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('현재 페이지: $_currentPage'),
-            ElevatedButton(
-              onPressed: () {
-                widget.onConfirm(_currentPage); // 선택된 페이지 전달
-              },
-              child: const Text('이 페이지 선택'),
-            ),
-          ],
-        ),
       ),
     );
   }
