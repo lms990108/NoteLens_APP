@@ -211,9 +211,18 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
         child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 206, 206, 206),
+            minimumSize: const Size(0, 40),
+            elevation: 4,
+          ),
           onPressed: _sendSelectedQuestionsToGpt,
-          child: const Text("Send All Selected Questions to GPT"),
+          child: const Text(
+            "질문하기",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );

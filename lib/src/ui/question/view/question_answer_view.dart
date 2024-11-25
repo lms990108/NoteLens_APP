@@ -130,14 +130,21 @@ class _QuestionAnswerViewState extends State<QuestionAnswerView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      "Question",
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const Divider(),
                     Text(
-                      "질문: ${widget.questions[index]}",
+                      widget.questions[index],
                       style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                          fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const Divider(),
                     Expanded(
                       child: Container(
+                        padding: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(10),
