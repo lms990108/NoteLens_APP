@@ -37,8 +37,8 @@ class _QuestionListViewState extends State<QuestionListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? "Edit Mode" : "Questions"),
+      backgroundColor: Colors.white,
+      appBar: CustomAppBar(
         actions: [
           IconButton(
             icon: Icon(_isEditing ? Icons.check : Icons.edit),
@@ -92,8 +92,13 @@ class _QuestionListViewState extends State<QuestionListView> {
       ),
       bottomNavigationBar: _isEditing
           ? ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 206, 206, 206),
+                minimumSize: const Size(0, 40),
+                elevation: 4,
+              ),
               onPressed: _mergeSelectedQuestions,
-              child: const Text("Merge Selected Questions"),
+              child: const Text("선택한 질문 병합하기"),
             )
           : null,
     );
@@ -109,8 +114,7 @@ class _QuestionListViewState extends State<QuestionListView> {
 
     if (selectedIndexes.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Select at least two questions to merge.")),
+        const SnackBar(content: Text("병합하기 위해서는 적어도 두 개의 질문이 선택되어야 합니다.")),
       );
       return;
     }
@@ -129,7 +133,7 @@ class _QuestionListViewState extends State<QuestionListView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Edit Merged Question and Content"),
+          title: const Text("병합된 질문 수정하기"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -150,7 +154,7 @@ class _QuestionListViewState extends State<QuestionListView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel"),
+              child: const Text("취소"),
             ),
             TextButton(
               onPressed: () {
@@ -181,7 +185,7 @@ class _QuestionListViewState extends State<QuestionListView> {
                 });
                 Navigator.of(context).pop();
               },
-              child: const Text("Save"),
+              child: const Text("저장"),
             ),
           ],
         );
@@ -197,7 +201,7 @@ class _QuestionListViewState extends State<QuestionListView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Content'),
+          title: const Text('질문 수정하기'),
           content: TextField(
             controller: controller,
             decoration: const InputDecoration(hintText: "Enter new content"),
@@ -205,7 +209,7 @@ class _QuestionListViewState extends State<QuestionListView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('취소'),
             ),
             TextButton(
               onPressed: () {
@@ -214,30 +218,11 @@ class _QuestionListViewState extends State<QuestionListView> {
                 });
                 Navigator.of(context).pop();
               },
-              child: const Text('Save'),
+              child: const Text('저장'),
             ),
           ],
         );
       },
     );
-  }
-
-  void _callApiWithSelectedQuestions() {
-    final selectedQuestions = widget.questions
-        .asMap()
-        .entries
-        .where((entry) => widget.isChecked[entry.key])
-        .map((entry) => entry.value)
-        .toList();
-
-    if (selectedQuestions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No questions selected.")),
-      );
-      return;
-    }
-
-    // 여기에 API 호출 로직 추가
-    print("Selected Questions: $selectedQuestions");
   }
 }

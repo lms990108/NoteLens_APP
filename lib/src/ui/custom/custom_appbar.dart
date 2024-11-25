@@ -32,7 +32,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           InkWell(
             child: const Icon(Icons.arrow_back, size: 30),
             onTap: () {
-              Navigator.of(context).pop();
+              _showBackConfirmationDialog(context);
             },
           ),
       actions: actions ??
@@ -46,6 +46,33 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               },
             )
           ],
+    );
+  }
+
+  void _showBackConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("뒤로 가시겠습니까?"),
+          content: const Text("현재 페이지에서 나가시겠습니까?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+              },
+              child: const Text("취소"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 다이얼로그 닫기
+                Navigator.of(context).pop(); // 이전 화면으로 이동
+              },
+              child: const Text("뒤로가기"),
+            ),
+          ],
+        );
+      },
     );
   }
 
