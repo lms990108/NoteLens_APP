@@ -140,7 +140,8 @@ class _MultiFileQuestionListViewState extends State<MultiFileQuestionListView> {
             'messages': [
               {
                 'role': 'user',
-                'content': '"$originalContent"의 내용 중에서, "$question" 부분에 대해 설명해줘'
+                'content':
+                    '"$originalContent"의 내용 중에서, "$question" 부분에 대해 설명해줘. 설명은 무조건 한글로 해줘'
               }
             ],
             'max_tokens': 500,

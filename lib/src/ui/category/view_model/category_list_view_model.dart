@@ -17,7 +17,7 @@ class CategoryListViewModel extends ChangeNotifier {
   File? selectedFile;
   File? get file => selectedFile;
   static const String apiUrl =
-      'http://13.124.185.96:8001/api/yolo/yolo_clova_once';
+      'http://115.143.184.140:8001/api/yolo/yolo_clova_once';
 
   // 왼쪽 하단 아이콘 토글
   void toggleLeftBlur() {
